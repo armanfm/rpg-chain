@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RPG Chain — Painel do Narrador</title>
+<script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blood:#8B0000;--blood2:#b22222;
+  --panel:#0e0b07;--surf:#161008;--card:#1e1510;--card2:#231e15;
+  --br:#3a2a1a;--br2:#5a3a20;
+  --gd:#c9a84c;--gd2:#7a6030;
+  --tx:#e8d9c0;--tx2:#8a7a65;--tx3:#5a4a35;
+  --gr:#2d6a3f;--gr2:#6abf85;
+  --ch:#4a4a90;--ch2:#9090e0;
+  --mono:'JetBrains Mono',monospace;
+}
+body{background:var(--panel);font-family:'Crimson Text',serif;color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
+header{background:var(--surf);border-bottom:2px solid var(--blood);padding:10px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.htitle{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--blood2);text-transform:uppercase;}
+.hname{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gd);letter-spacing:2px;}
+.hspacer{flex:1;}
+.hbtn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid var(--br2);background:transparent;color:var(--tx2);transition:all .15s;}
+.hbtn:hover{border-color:var(--gd2);color:var(--gd);}
+nav{background:var(--surf);border-bottom:1px solid var(--br);display:flex;padding:0 20px;flex-shrink:0;}
+.tab{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:10px 16px;border:none;background:transparent;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s;}
+.tab:hover{color:var(--tx2);}
+.tab.on{color:var(--blood2);border-bottom-color:var(--blood);}
+main{flex:1;overflow-y:auto;padding:18px 20px;}
+.pane{display:none;}.pane.on{display:block;}
+.card{background:var(--surf);border:1px solid var(--br);border-radius:2px;overflow:hidden;margin-bottom:14px;}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--card);border-bottom:1px solid var(--br);}
+.card-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gd2);}
+.card-body{padding:12px 14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.frow{margin-bottom:10px;}
+.frow label{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--tx3);margin-bottom:4px;}
+.frow input,.frow textarea,.frow select{width:100%;background:var(--card2);border:1px solid var(--br);border-radius:2px;padding:6px 10px;color:var(--tx);font-family:'Crimson Text',serif;font-size:14px;outline:none;transition:border-color .15s;}
+.frow input:focus,.frow textarea:focus,.frow select:focus{border-color:var(--gd2);}
+.frow textarea{resize:vertical;font-family:var(--mono);font-size:12px;}
+.frow select option{background:var(--card);}
+.btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap;border:1px solid var(--br2);background:transparent;color:var(--tx2);}
+.btn:hover{border-color:var(--gd2);color:var(--gd);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-prim{background:var(--blood);border-color:var(--blood);color:#fff;}
+.btn-prim:hover{background:var(--blood2);}
+.btn-approve{background:rgba(45,106,63,.2);border-color:var(--gr);color:var(--gr2);}
+.btn-approve:hover{background:rgba(45,106,63,.35);}
+.btn-deny{background:rgba(139,0,0,.15);border-color:var(--blood);color:#f88;}
+.btn-deny:hover{background:rgba(139,0,0,.3);}
+.btn-chain{background:rgba(74,74,144,.15);border-color:var(--ch);color:var(--ch2);}
+.btn-chain:hover{background:rgba(74,74,144,.3);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.drop-zone{border:1px dashed var(--br2);border-radius:4px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gd);background:rgba(201,168,76,.04);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-ico{font-size:26px;color:var(--gd2);margin-bottom:5px;}
+.drop-lbl{font-size:14px;color:var(--tx2);}
+.drop-lbl strong{color:var(--gd);}
+.drop-hint{font-size:11px;color:var(--tx3);font-family:var(--mono);margin-top:3px;}
+.json-prev{background:var(--panel);border:1px solid var(--br);border-radius:2px;padding:10px;font-family:var(--mono);font-size:11px;color:#b8a870;max-height:140px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;display:none;margin-bottom:10px;}
+.result-box{background:var(--card2);border:1px solid var(--br);border-radius:2px;padding:12px 14px;margin-top:12px;display:none;}
+.result-box.show{display:block;}
+.result-status{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.06em;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--br);}
+.result-status.valid{color:var(--gr2);}
+.result-status.invalid{color:#f88;}
+.result-body pre{font-family:var(--mono);font-size:11px;background:var(--card);padding:8px;border-radius:2px;overflow-x:auto;white-space:pre-wrap;color:var(--tx);}
+.loading-txt{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.1em;color:var(--gd2);animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+.ficha-info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;margin-bottom:12px;}
+.fi-item{background:var(--card2);border:1px solid var(--br);border-radius:2px;padding:5px 9px;}
+.fi-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blood2);margin-bottom:2px;}
+.fi-val{font-size:13px;color:var(--tx);}
+.dots-row{display:flex;align-items:center;padding:3px 0;border-bottom:1px dotted rgba(58,42,26,.35);}
+.dots-row:last-child{border-bottom:none;}
+.dots-lbl{flex:1;font-size:13px;color:var(--tx);}
+.dots-pip{display:flex;gap:3px;}
+.pip{width:9px;height:9px;border-radius:50%;border:1px solid var(--blood);flex-shrink:0;}
+.pip.on{background:var(--blood);}
+.pip.vt{border-color:var(--ch2);}
+.pip.vt.on{background:var(--ch2);}
+.xp-badge{display:inline-block;font-family:'Cinzel',serif;font-size:11px;padding:3px 10px;border-radius:2px;margin-right:6px;}
+.xp-ok{background:rgba(45,106,63,.2);border:1px solid var(--gr);color:var(--gr2);}
+.xp-debt{background:rgba(139,0,0,.15);border:1px solid var(--blood);color:#f88;}
+.hash-box{background:var(--card);border:1px solid var(--br);border-radius:2px;padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--gd2);word-break:break-all;margin-top:6px;}
+.player-item{background:var(--card2);border:1px solid var(--br);border-left:3px solid var(--blood);border-radius:2px;padding:10px 14px;margin-bottom:10px;}
+.player-name{font-family:'Cinzel',serif;font-size:14px;color:var(--gd);margin-bottom:2px;}
+.xp-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.xp-stat{background:var(--card);border:1px solid var(--br);border-radius:2px;padding:4px 10px;text-align:center;min-width:70px;}
+.xp-stat span{display:block;font-family:'Cinzel',serif;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);}
+.xp-stat strong{font-family:'Cinzel',serif;font-size:18px;color:var(--gd);}
+.xp-stat.debt strong{color:#f88;}
+.log-entry{padding:5px 0;border-bottom:1px dotted rgba(58,42,26,.4);font-size:12px;color:var(--tx2);}
+.log-entry:last-child{border-bottom:none;}
+.log-time{font-family:var(--mono);font-size:10px;color:var(--tx3);}
+.cronica-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+.cronica-name{font-family:'Cinzel',serif;font-size:16px;color:var(--gd);}
+.flash{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--gd2);border-radius:2px;padding:7px 16px;font-family:'Cinzel',serif;font-size:10px;color:var(--gd);letter-spacing:.08em;opacity:0;transition:opacity .25s;z-index:9999;pointer-events:none;}
+.flash.show{opacity:1;}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:var(--surf);border:1px solid var(--br2);border-top:3px solid var(--blood);border-radius:2px;width:480px;max-width:96vw;max-height:90vh;overflow-y:auto;padding:22px;position:relative;}
+.modal h3{font-family:'Cinzel',serif;font-size:15px;color:var(--gd);margin-bottom:14px;letter-spacing:.04em;}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer;}
+.modal-close:hover{color:var(--tx);}
+.modal-btns{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--br);}
+.cfg-note{font-size:12px;color:var(--tx2);font-style:italic;margin-bottom:12px;padding:8px 10px;background:var(--card);border-left:2px solid var(--gd2);line-height:1.5;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--surf);}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px;}
+@media(max-width:700px){.g2,.g3{grid-template-columns:1fr}.ficha-info{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="htitle">RPG Chain · Vampiro: A Máscara</div>
+    <div class="hname">Painel do Narrador</div>
+  </div>
+  <div class="hspacer"></div>
+  <button class="hbtn" onclick="openConfig()">⚙ Configurar</button>
+</header>
+
+<nav>
+  <button class="tab on" onclick="goTab('validar',this)">Validar Ficha</button>
+  <button class="tab" onclick="goTab('cronicas',this)">Crônicas</button>
+</nav>
+
+<main>
+
+<!-- ═══ VALIDAR ═══ -->
+<div class="pane on" id="pane-validar">
+  <div class="g2" style="align-items:start;">
+
+    <div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Ficha do Jogador</span></div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" accept=".json" id="fileInput" onchange="loadFile(this)"/>
+            <div class="drop-ico">☩</div>
+            <div class="drop-lbl">Arraste o <strong>ficha.json</strong> aqui</div>
+            <div class="drop-hint">ou clique para selecionar · jogador exporta da própria ficha</div>
+          </div>
+          <div class="json-prev" id="jsonPrev"></div>
+          <div id="fichaDisplay" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="card" id="hashCard" style="display:none;">
+        <div class="card-hd">
+          <span class="card-title">⬥ Hash / Integridade</span>
+          <span id="hashVersao" style="font-size:10px;color:var(--tx3);font-family:var(--mono);"></span>
+        </div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--tx3);font-family:'Cinzel',serif;letter-spacing:.06em;margin-bottom:4px;">SHA-256 determinístico</div>
+          <div class="hash-box" id="hashDisplay"></div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-approve" id="btnAprovar" onclick="aprovarHash()" disabled>✓ Aprovar Hash</button>
+            <button class="btn btn-deny" id="btnRejeitar" onclick="rejeitarFicha()" disabled>✕ Rejeitar</button>
+          </div>
+          <div id="hashStatus" style="margin-top:8px;font-size:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Prompt 1 — Validação da Ficha Inicial</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+            Verifica atributos 7/5/3, perícias 13/9/5, disciplinas de clã, geração, virtudes e pontos bônus. <em>Cada narrador usa sua própria chave Gemini.</em>
+          </p>
+          <button class="btn btn-prim" id="btnValidarFicha" onclick="validarFichaInicial()" disabled>▶ Enviar ao Gemini</button>
+          <div class="result-box" id="resultFicha">
+            <div class="result-status" id="statusFicha"></div>
+            <div class="result-body" id="bodyFicha"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Prompt 2 — Pagamento de XP</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+            Gemini calcula o custo exato, verifica se é fora de clã e checa o saldo. Narrador só decide: sim ou não.
+          </p>
+          <div class="frow">
+            <label>Melhoria solicitada</label>
+            <input type="text" id="xpRequest" placeholder="Ex: Fortitude (fora de clã) de 2 para 3"/>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <div class="frow" style="flex:1;"><label>XP Total</label><input type="number" id="xpTotal" min="0" value="0" oninput="calcSaldo()"/></div>
+            <div class="frow" style="flex:1;"><label>XP Gasto</label><input type="number" id="xpGasto" min="0" value="0" oninput="calcSaldo()"/></div>
+            <div class="frow" style="flex:1;"><label>Saldo</label><input type="number" id="xpSaldo" readonly style="opacity:.6;"/></div>
+          </div>
+          <div class="frow">
+            <label>Contexto narrativo (opcional)</label>
+            <textarea id="xpContexto" rows="2" placeholder="3 sessões treinando, conseguiu um mestre Tremere..."></textarea>
+          </div>
+          <button class="btn btn-prim" id="btnValidarXP" onclick="validarXP()" disabled>▶ Calcular e Validar</button>
+          <div class="result-box" id="resultXP">
+            <div class="result-status" id="statusXP"></div>
+            <div class="result-body" id="bodyXP"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ CRÔNICAS ═══ -->
+<div class="pane" id="pane-cronicas">
+  <div class="cronica-hd">
+    <div class="cronica-name" id="cronicaNome">— Sem crônica ativa —</div>
+    <button class="btn btn-prim" onclick="openMod('modCronica')">+ Nova Crônica</button>
+  </div>
+  <div class="g2" style="align-items:start;">
+    <div>
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">⬥ Jogadores</span>
+          <button class="btn" style="font-size:9px;padding:3px 10px;" onclick="openMod('modPlayer')">+ Adicionar</button>
+        </div>
+        <div class="card-body" id="playersList">
+          <div style="text-align:center;color:var(--tx3);font-style:italic;padding:16px;font-size:13px;">Nenhum jogador ainda.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Dar XP</span></div>
+        <div class="card-body">
+          <div class="frow"><label>Jogador</label><select id="xpPlayerSel"></select></div>
+          <div class="frow"><label>Quantidade</label><input type="number" id="xpQtd" min="1" value="1" style="width:100px;"/></div>
+          <div class="frow"><label>Motivo</label><input type="text" id="xpMotivo" placeholder="Sessão 7, roleplay, objetivo..."/></div>
+          <div class="btn-row"><button class="btn btn-approve" onclick="darXP()">✓ Conceder XP</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Autorizar Onchain (Sepolia)</span></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">Registra o hash aprovado na Sepolia. Só estados validados pelo Gemini e aprovados pelo narrador.</p>
+          <div class="frow"><label>Jogador</label><select id="onchainSel" onchange="updateOnchainInfo()"></select></div>
+          <div id="onchainInfo" style="display:none;margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--tx3);font-family:'Cinzel',serif;letter-spacing:.06em;margin-bottom:3px;">Hash aprovado:</div>
+            <div class="hash-box" id="onchainHash"></div>
+            <div style="font-size:12px;margin-top:6px;" id="onchainMeta"></div>
+          </div>
+          <div class="btn-row"><button class="btn btn-chain" onclick="autorizarOnchain()">⬡ Autorizar na Sepolia</button></div>
+          <div id="txResult" style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--ch2);word-break:break-all;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">⬥ Log da Crônica</span></div>
+        <div class="card-body" style="max-height:200px;overflow-y:auto;" id="logCronica">
+          <div style="text-align:center;color:var(--tx3);font-style:italic;padding:10px;font-size:13px;">Sem registros.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<div class="flash" id="flash"></div>
+
+<!-- MODAL CONFIG -->
+<div class="ov" id="modConfig" style="display:none;" onclick="closeModBg(event,'modConfig')">
+<div class="modal">
+  <button class="modal-close" onclick="closeMod('modConfig')">✕</button>
+  <h3>Configuração do Narrador</h3>
+  <div class="cfg-note">
+    Cada narrador usa <strong>sua própria chave Gemini</strong>. Tudo fica salvo só neste dispositivo (PouchDB local). Nenhuma chave sai da sua máquina.
+  </div>
+  <div class="frow"><label>Minha Gemini API Key</label><input type="password" id="cfgKey" placeholder="AIzaSy..."/></div>
+  <div class="frow"><label>Minha Wallet Sepolia</label><input type="text" id="cfgWallet" placeholder="0x..."/></div>
+  <div class="frow"><label>Endereço do Contrato Sepolia</label><input type="text" id="cfgContrato" placeholder="0x... (opcional)"/></div>
+  <div class="modal-btns">
+    <button class="btn btn-prim" onclick="salvarConfig()">Salvar</button>
+    <button class="btn" onclick="closeMod('modConfig')">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL CRÔNICA -->
+<div class="ov" id="modCronica" style="display:none;" onclick="closeModBg(event,'modCronica')">
+<div class="modal">
+  <button class="modal-close" onclick="closeMod('modCronica')">✕</button>
+  <h3>Nova Crônica</h3>
+  <div class="frow"><label>Nome</label><input type="text" id="cNome" placeholder="Praga Sombria..."/></div>
+  <div class="frow"><label>Narrador</label><input type="text" id="cNarrador" placeholder="Seu nome"/></div>
+  <div class="frow"><label>Ambientação</label><input type="text" id="cAmb" placeholder="Idade das Trevas, 1230 d.C., Praga"/></div>
+  <div class="modal-btns">
+    <button class="btn btn-prim" onclick="criarCronica()">Criar</button>
+    <button class="btn" onclick="closeMod('modCronica')">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL JOGADOR -->
+<div class="ov" id="modPlayer" style="display:none;" onclick="closeModBg(event,'modPlayer')">
+<div class="modal">
+  <button class="modal-close" onclick="closeMod('modPlayer')">✕</button>
+  <h3>Adicionar Jogador</h3>
+  <div class="frow"><label>Nome do Jogador</label><input type="text" id="pNome" placeholder="Nome real ou apelido"/></div>
+  <div class="frow"><label>Personagem</label><input type="text" id="pPersonagem" placeholder="Nome do personagem"/></div>
+  <div class="frow"><label>Clã</label><input type="text" id="pClan" placeholder="Toreador, Brujah, Tremere..."/></div>
+  <div class="frow"><label>XP Inicial</label><input type="number" id="pXPInicial" min="0" value="0"/></div>
+  <div class="modal-btns">
+    <button class="btn btn-prim" onclick="adicionarJogador()">Adicionar</button>
+    <button class="btn" onclick="closeMod('modPlayer')">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="ov" id="modHistXP" style="display:none;" onclick="closeModBg(event,'modHistXP')">
+<div class="modal">
+  <button class="modal-close" onclick="closeMod('modHistXP')">✕</button>
+  <h3 id="histXPTitle">Histórico XP</h3>
+  <div id="histXPBody" style="max-height:400px;overflow-y:auto;"></div>
+  <div class="modal-btns"><button class="btn" onclick="closeMod('modHistXP')">Fechar</button></div>
+</div>
+</div>
+
+<script>
+const db=new PouchDB('rpgchain_narrador_v1');
+let CFG={geminiKey:'',wallet:'',contrato:''};
+let CRONICA=null, PLAYERS=[], LOG=[];
+let fichaAtual=null, hashAtual=null;
+
+async function dbGet(id){try{return await db.get(id);}catch(e){return null;}}
+async function dbSet(id,data){const doc=await dbGet(id);await db.put(doc?{...doc,...data}:{_id:id,...data});}
+
+async function initDB(){
+  const cfg=await dbGet('config'); if(cfg) CFG={...CFG,...cfg};
+  const cr=await dbGet('cronica'); if(cr){CRONICA=cr;document.getElementById('cronicaNome').textContent=cr.nome||'—';}
+  const pl=await dbGet('players'); if(pl){PLAYERS=pl.list||[];renderPlayers();}
+  const lg=await dbGet('log'); if(lg){LOG=lg.entries||[];renderLog();}
+}
+
+function flash(msg,dur=2200){const el=document.getElementById('flash');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur);}
+function openMod(id){document.getElementById(id).style.display='flex';}
+function closeMod(id){document.getElementById(id).style.display='none';}
+function closeModBg(e,id){if(e.target.id===id)closeMod(id);}
+function goTab(id,btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pane-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='cronicas')populateSelects();
+}
+function fmtTime(ts){return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function calcSaldo(){
+  const t=parseInt(document.getElementById('xpTotal').value)||0;
+  const g=parseInt(document.getElementById('xpGasto').value)||0;
+  document.getElementById('xpSaldo').value=t-g;
+}
+
+function openConfig(){
+  document.getElementById('cfgKey').value=CFG.geminiKey||'';
+  document.getElementById('cfgWallet').value=CFG.wallet||'';
+  document.getElementById('cfgContrato').value=CFG.contrato||'';
+  openMod('modConfig');
+}
+async function salvarConfig(){
+  CFG.geminiKey=document.getElementById('cfgKey').value.trim();
+  CFG.wallet=document.getElementById('cfgWallet').value.trim();
+  CFG.contrato=document.getElementById('cfgContrato').value.trim();
+  await dbSet('config',CFG);
+  closeMod('modConfig');
+  flash('Configurações salvas localmente');
+}
+
+// ── UPLOAD ──
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.name.endsWith('.json'))processFile(f);else flash('Envie um .json');
+});
+function loadFile(input){if(input.files[0])processFile(input.files[0]);}
+
+function processFile(file){
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      fichaAtual=json;
+      const prev=document.getElementById('jsonPrev');
+      prev.style.display='block';
+      const str=JSON.stringify(json,null,2);
+      prev.textContent=str.length>1400?str.slice(0,1400)+'\n...(truncado)':str;
+      hashAtual=await hashCanonico(json); // hash canônico — estável, sem timestamps
+      document.getElementById('hashDisplay').textContent=hashAtual;
+      document.getElementById('hashVersao').textContent='v'+(json.versao||json.meta?.versao||'?');
+      document.getElementById('hashCard').style.display='block';
+      document.getElementById('hashStatus').textContent='';
+      renderFichaDisplay(json);
+      const xpT=json.meta?.xp?.total||0, xpS=json.meta?.xp?.spent||0;
+      document.getElementById('xpTotal').value=xpT;
+      document.getElementById('xpGasto').value=xpS;
+      document.getElementById('xpSaldo').value=xpT-xpS;
+      ['btnAprovar','btnRejeitar','btnValidarFicha','btnValidarXP'].forEach(id=>document.getElementById(id).disabled=false);
+      ['resultFicha','resultXP'].forEach(id=>document.getElementById(id).classList.remove('show'));
+      flash('Ficha carregada: '+(json.info?.name||'sem nome'));
+    }catch(err){flash('JSON inválido: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function sortKeys(obj){
+  if(Array.isArray(obj))return obj.map(sortKeys);
+  if(obj!==null&&typeof obj==='object')return Object.keys(obj).sort().reduce((r,k)=>{r[k]=sortKeys(obj[k]);return r;},{});
+  return obj;
+}
+// Hash canônico — campos fixos, sem timestamps, sem hashCanonico
+// Deve ser idêntico ao da ficha do jogador
+function snapshotCanonico(obj){
+  const campos=['attrs','bloodMax','disciplines','flaws','humanidade',
+                'info','merits','meta','skillNames','skills','versao',
+                'virtues','willpower'];
+  return campos.reduce((r,k)=>{r[k]=obj[k];return r;},{});
+}
+async function hashCanonico(obj){
+  return await sha256(JSON.stringify(sortKeys(snapshotCanonico(obj))));
+}
+
+async function aprovarHash(){
+  if(!fichaAtual||!hashAtual)return;
+  const nome=fichaAtual.info?.name||'personagem';
+  await dbSet('hash_'+hashAtual.slice(0,16),{hash:hashAtual,nomePJ:nome,clan:fichaAtual.info?.clan||'',aprovadoEm:Date.now(),status:'aprovado'});
+  // vincular ao jogador se existir
+  const p=PLAYERS.find(x=>x.personagem===nome||x.nome===nome);
+  if(p){p.hashAprovado=hashAtual;p.aprovadoEm=Date.now();await dbSet('players',{list:PLAYERS});renderPlayers();}
+  const el=document.getElementById('hashStatus');
+  el.style.color='var(--gr2)';el.textContent='✓ Hash aprovado e salvo localmente';
+  addLog('Hash aprovado: '+nome+' ('+hashAtual.slice(0,12)+'...)');
+  flash('Hash aprovado: '+nome);
+}
+function rejeitarFicha(){
+  const el=document.getElementById('hashStatus');
+  el.style.color='#f88';el.textContent='✕ Ficha rejeitada — comunique o jogador';
+  addLog('Ficha rejeitada: '+(fichaAtual?.info?.name||'?'));
+  flash('Ficha rejeitada');
+}
+
+// ── DISPLAY ──
+function mkPips(val,max,vt=false){
+  let s='<div class="dots-pip">';
+  for(let i=1;i<=max;i++)s+=`<div class="pip${i<=val?' on':''}${vt?' vt':''}"></div>`;
+  return s+'</div>';
+}
+function miniCard(title,rows){return`<div class="card" style="margin-bottom:8px;"><div class="card-hd"><span class="card-title">${title}</span></div><div class="card-body">${rows}</div></div>`;}
+
+function renderFichaDisplay(f){
+  const el=document.getElementById('fichaDisplay');el.style.display='block';
+  const info=f.info||{},attrs=f.attrs||{},skills=f.skills||{},sn=f.skillNames||{},virtues=f.virtues||{},discs=f.disciplines||[];
+  const AM={forca:'Força',destreza:'Destreza',vigor:'Vigor',carisma:'Carisma',manipulacao:'Manipulação',aparencia:'Aparência',percepcao:'Percepção',inteligencia:'Inteligência',raciocinio:'Raciocínio'};
+  const SM={prontidao:'Prontidão',esportes:'Esportes',presciencia:'Presciência',briga:'Briga',empatia:'Empatia',expressao:'Expressão',intimidacao:'Intimidação',lideranca:'Liderança',manha:'Manha',labia:'Lábia',sk_t_c:'Especialização',animais:'Empatia c/Animais',oficios:'Ofícios',conducao:'Condução',etiqueta:'Etiqueta',armas_foco:'Armas de Fogo',furto:'Furto',armas_brancas:'Armas Brancas',performance:'Performance',furtividade:'Furtividade',sobrevivencia:'Sobrevivência',sk_p_c:'Especialização',academicos:'Acadêmicos',computador:'Computador',financas:'Finanças',investigacao:'Investigação',direito:'Direito',medicina:'Medicina',ocultismo:'Ocultismo',politica:'Política',ciencia:'Ciência',tecnologia:'Tecnologia',sk_c_c:'Especialização'};
+  const dr=(k,v,max=5,vt=false)=>`<div class="dots-row"><span class="dots-lbl">${AM[k]||SM[k]||sn[k]||k}</span>${mkPips(v||0,max,vt)}</div>`;
+  const xpT=f.meta?.xp?.total||0,xpS=f.meta?.xp?.spent||0,xpD=xpT-xpS;
+  const IL={name:'Nome',clan:'Clã',gen:'Geração',nature:'Natureza',demeanor:'Comportamento',haven:'Refúgio',concept:'Conceito',player:'Jogador'};
+  let html=`<div class="ficha-info">${Object.keys(IL).map(k=>`<div class="fi-item"><div class="fi-label">${IL[k]}</div><div class="fi-val">${info[k]||'—'}</div></div>`).join('')}</div>
+  <div style="margin-bottom:10px;"><span class="xp-badge ${xpD>=0?'xp-ok':'xp-debt'}">${xpD>=0?'+':''}${xpD} XP ${xpD>=0?'disponível':'(dívida narrativa)'}</span></div>`;
+  html+=`<div class="g3">
+    ${miniCard('Físicos',['forca','destreza','vigor'].map(k=>dr(k,attrs[k])).join(''))}
+    ${miniCard('Social',['carisma','manipulacao','aparencia'].map(k=>dr(k,attrs[k])).join(''))}
+    ${miniCard('Mentais',['percepcao','inteligencia','raciocinio'].map(k=>dr(k,attrs[k])).join(''))}
+  </div>`;
+  const T=['prontidao','esportes','presciencia','briga','empatia','expressao','intimidacao','lideranca','manha','labia','sk_t_c'];
+  const P=['animais','oficios','conducao','etiqueta','armas_foco','furto','armas_brancas','performance','furtividade','sobrevivencia','sk_p_c'];
+  const C=['academicos','computador','financas','investigacao','direito','medicina','ocultismo','politica','ciencia','tecnologia','sk_c_c'];
+  html+=`<div class="g3">
+    ${miniCard('Talentos',T.map(k=>dr(k,skills[k])).join(''))}
+    ${miniCard('Perícias',P.map(k=>dr(k,skills[k])).join(''))}
+    ${miniCard('Conhecimentos',C.map(k=>dr(k,skills[k])).join(''))}
+  </div>`;
+  const VM={consciencia:'Consciência / Convicção',autocontrole:'Autocontrole / Instinto',coragem:'Coragem'};
+  html+=`<div class="g2">
+    ${miniCard('Virtudes',Object.keys(VM).map(k=>`<div class="dots-row"><span class="dots-lbl">${VM[k]}</span>${mkPips(virtues[k]||0,5,true)}</div>`).join(''))}
+    ${miniCard('F. Vontade · Humanidade · Sangue',`<div class="dots-row"><span class="dots-lbl">Força de Vontade</span>${mkPips(f.willpower||0,10)}</div><div class="dots-row"><span class="dots-lbl">Humanidade / Caminho</span>${mkPips(f.humanidade||0,10)}</div><div class="dots-row"><span class="dots-lbl">Sangue máximo</span>${mkPips(f.bloodMax||0,20)}</div>`)}
+  </div>`;
+  if(discs.length)html+=miniCard('Disciplinas',discs.map(d=>`<div style="margin-bottom:8px;"><div class="dots-row" style="border-bottom:1px solid var(--br2);padding-bottom:4px;margin-bottom:4px;"><span class="dots-lbl" style="font-family:'Cinzel',serif;color:var(--gd);font-size:13px;">${d.name||'—'}</span>${mkPips(d.dots||0,5)}</div>${(d.powers||[]).map(p=>`<div style="font-size:12px;color:var(--tx2);padding:2px 0 2px 10px;">Nv.${p.level} ${p.name||'?'}${p.passive?' <em>(passivo)</em>':''}</div>`).join('')}</div>`).join(''));
+  el.innerHTML=html;
+}
+
+// ── GEMINI ──
+async function callGemini(prompt){
+  if(!CFG.geminiKey){flash('Configure sua Gemini API Key em ⚙ Configurar');return null;}
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${CFG.geminiKey}`,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    if(!r.ok){flash('Erro Gemini '+r.status+': verifique a chave');return null;}
+    const d=await r.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text||null;
+  }catch(e){flash('Erro de rede: '+e.message);return null;}
+}
+
+// ── PROMPT 1 ──
+async function validarFichaInicial(){
+  if(!fichaAtual){flash('Carregue uma ficha primeiro');return;}
+  const btn=document.getElementById('btnValidarFicha');
+  const box=document.getElementById('resultFicha');
+  const stEl=document.getElementById('statusFicha');
+  const bdEl=document.getElementById('bodyFicha');
+  btn.disabled=true;box.classList.add('show');
+  stEl.className='result-status';stEl.innerHTML='<span class="loading-txt">Consultando Gemini...</span>';bdEl.innerHTML='';
+  const f=fichaAtual;
+  const prompt=`Você é um auditor de fichas de Vampiro: A Máscara — Idade das Trevas (V20 Dark Ages). Responda APENAS em português.
+
+REGRAS DE CRIAÇÃO:
+• Atributos: grupos Físico/Social/Mental recebem 7/5/3 pontos (todos começam em 1; conta-se o gasto ACIMA de 1). Máx 5 na criação.
+• Perícias: grupos Talentos/Perícias/Conhecimentos recebem 13/9/5 pontos (começam em 0). Máx 3 na criação sem pontos bônus.
+• Disciplinas: 3 pontos para disciplinas de clã. Disciplinas fora de clã custam pontos bônus.
+• Virtudes: 7 pontos para Consciência (ou Convicção), Autocontrole (ou Instinto) e Coragem (mínimo 1 cada).
+• Humanidade inicial = Consciência + Autocontrole. Força de Vontade permanente = Coragem.
+• Sangue máximo por geração: 13ª=10; 12ª=11; 11ª=12; 10ª=13; 9ª=14; 8ª=15.
+• 15 Pontos Bônus. Custos: Atributo=5, Habilidade=2, Disciplina clã=10, Disc. fora clã=7, Virtude=2, Humanidade=2, FdV=1.
+
+FICHA RECEBIDA:
+${JSON.stringify(f,null,2)}
+
+Responda EXATAMENTE neste formato:
+
+RESULTADO: VÁLIDA ou INVÁLIDA
+
+ATRIBUTOS:
+- Físicos: [soma acima de 1] | Social: [soma] | Mentais: [soma] | Esperado: 7/5/3
+- [observações ou inconsistências]
+
+PERÍCIAS:
+- Talentos: [soma] | Perícias: [soma] | Conhecimentos: [soma] | Esperado: 13/9/5
+- [observações]
+
+DISCIPLINAS:
+- [lista com níveis, são de clã do personagem?]
+
+VIRTUDES E POOLS:
+- Consciência+Autocontrole=${(f.virtues?.consciencia||0)+(f.virtues?.autocontrole||0)} → Humanidade deveria ser esse valor
+- Coragem=${f.virtues?.coragem||0} → FdV permanente deveria ser esse valor
+- Sangue máximo para ${f.info?.gen||'?'} geração: [valor esperado]
+- [inconsistências]
+
+PONTOS BÔNUS:
+- [estimativa de gastos, total deve ser ≤15]
+
+PROBLEMAS ENCONTRADOS:
+- [lista numerada de problemas, ou "Nenhum"]
+
+RECOMENDAÇÃO: Aprovar ou Reprovar
+- [justificativa em 1 linha]`;
+
+  const resp=await callGemini(prompt);
+  btn.disabled=false;
+  if(!resp){stEl.textContent='Erro ao chamar Gemini.';return;}
+  const valida=resp.toLowerCase().includes('resultado: válida')||resp.toLowerCase().includes('resultado: valida');
+  stEl.className='result-status '+(valida?'valid':'invalid');
+  stEl.textContent=valida?'✓ Ficha Válida — pronta para aprovação':'✕ Ficha com Problemas — revisar com jogador';
+  bdEl.innerHTML=`<pre>${resp}</pre>`;
+  addLog('Gemini validou ficha de '+(f.info?.name||'?')+': '+(valida?'VÁLIDA':'INVÁLIDA'));
+}
+
+// ── PROMPT 2 ──
+async function validarXP(){
+  if(!fichaAtual){flash('Carregue uma ficha primeiro');return;}
+  const melhoria=document.getElementById('xpRequest').value.trim();
+  if(!melhoria){flash('Descreva a melhoria solicitada');return;}
+  const btn=document.getElementById('btnValidarXP');
+  const box=document.getElementById('resultXP');
+  const stEl=document.getElementById('statusXP');
+  const bdEl=document.getElementById('bodyXP');
+  btn.disabled=true;box.classList.add('show');
+  stEl.className='result-status';stEl.innerHTML='<span class="loading-txt">Calculando custo XP...</span>';bdEl.innerHTML='';
+  const f=fichaAtual;
+  const xpT=parseInt(document.getElementById('xpTotal').value)||0;
+  const xpG=parseInt(document.getElementById('xpGasto').value)||0;
+  const xpDisp=xpT-xpG;
+  const ctx=document.getElementById('xpContexto').value.trim();
+  const discsNomes=(f.disciplines||[]).map(d=>d.name).filter(Boolean).join(', ')||'nenhuma registrada';
+
+  const prompt=`Você é um auditor de XP de Vampiro: A Máscara. Responda APENAS em português.
+
+TABELA DE CUSTOS XP (Vampiro: A Máscara):
+• Nova Habilidade (0→1): 3 XP
+• Habilidade (N→N+1): N × 2 XP
+• Atributo (N→N+1): N × 4 XP
+• Disciplina de clã (0→1): 10 XP
+• Disciplina de clã (N→N+1): N × 5 XP
+• Disciplina FORA de clã (0→1): 10 XP (exige justificativa narrativa)
+• Disciplina fora de clã (N→N+1): N × 7 XP
+• Virtude (N→N+1): N × 2 XP
+• Humanidade/Caminho (N→N+1): N × 2 XP
+• Força de Vontade (N→N+1): N × 1 XP
+
+PERSONAGEM:
+• Nome: ${f.info?.name||'?'} | Clã: ${f.info?.clan||'?'} | Geração: ${f.info?.gen||'?'}
+• Disciplinas conhecidas: ${discsNomes}
+• XP total: ${xpT} | XP gasto: ${xpG} | Saldo disponível: ${xpDisp} XP
+
+MELHORIA SOLICITADA: ${melhoria}
+${ctx?'\nCONTEXTO NARRATIVO: '+ctx:''}
+
+Responda EXATAMENTE neste formato:
+
+MELHORIA: [o que está sendo comprado, nível atual → novo nível]
+CUSTO: X XP
+SALDO DISPONÍVEL: ${xpDisp} XP
+SALDO APÓS: X XP [ou "−X XP (Dívida Narrativa)" se negativo]
+
+É disciplina de clã? [Sim / Não / Verificar — explique brevemente]
+Requer justificativa narrativa? [Sim / Não — por quê]
+
+CÁLCULO:
+[passo a passo do cálculo do custo]
+
+PROBLEMAS: [ou "Nenhum"]
+
+RESULTADO: APROVADO ou REPROVADO
+Justificativa: [1 linha para o narrador decidir]`;
+
+  const resp=await callGemini(prompt);
+  btn.disabled=false;
+  if(!resp){stEl.textContent='Erro ao chamar Gemini.';return;}
+  const aprovado=resp.toLowerCase().includes('resultado: aprovado');
+  const divida=resp.toLowerCase().includes('dívida narrativa');
+  stEl.className='result-status '+(aprovado?'valid':'invalid');
+  stEl.textContent=aprovado?(divida?'⚠ Aprovado com Dívida Narrativa — narrador decide':'✓ XP Aprovado — custo dentro do saldo'):'✕ XP Reprovado — saldo insuficiente ou regra violada';
+  bdEl.innerHTML=`<pre>${resp}</pre>`;
+  addLog('Gemini XP de '+(f.info?.name||'?')+': '+(aprovado?'APROVADO':'REPROVADO')+' — '+melhoria.slice(0,40));
+}
+
+// ── CRÔNICAS ──
+async function criarCronica(){
+  const nome=document.getElementById('cNome').value.trim();
+  if(!nome){flash('Dê um nome à crônica');return;}
+  CRONICA={nome,narrador:document.getElementById('cNarrador').value.trim(),ambientacao:document.getElementById('cAmb').value.trim(),criadaEm:Date.now()};
+  await dbSet('cronica',CRONICA);
+  document.getElementById('cronicaNome').textContent=nome;
+  closeMod('modCronica');flash('Crônica criada: '+nome);addLog('Crônica criada: '+nome);
+}
+
+async function adicionarJogador(){
+  const nome=document.getElementById('pNome').value.trim();
+  if(!nome){flash('Nome do jogador obrigatório');return;}
+  const p={id:Date.now(),nome,personagem:document.getElementById('pPersonagem').value.trim(),clan:document.getElementById('pClan').value.trim(),xpTotal:parseInt(document.getElementById('pXPInicial').value)||0,xpGasto:0,hashAprovado:null,aprovadoEm:null,historico:[]};
+  PLAYERS.push(p);await dbSet('players',{list:PLAYERS});
+  closeMod('modPlayer');renderPlayers();populateSelects();
+  flash('Jogador adicionado: '+nome);addLog('Jogador: '+nome+' / '+p.personagem);
+}
+
+async function darXP(){
+  const id=parseInt(document.getElementById('xpPlayerSel').value);
+  const p=PLAYERS.find(x=>x.id===id);
+  if(!p){flash('Selecione um jogador');return;}
+  const qtd=parseInt(document.getElementById('xpQtd').value)||0;
+  if(qtd<=0){flash('XP inválido');return;}
+  const motivo=document.getElementById('xpMotivo').value.trim()||'XP concedido';
+  p.xpTotal+=qtd;p.historico.unshift({tipo:'ganho',valor:qtd,motivo,em:Date.now()});
+  await dbSet('players',{list:PLAYERS});
+  renderPlayers();populateSelects();
+  addLog('XP +'+qtd+' para '+p.personagem+' — '+motivo);flash('+'+qtd+' XP para '+p.personagem);
+}
+
+async function removerJogador(id){
+  if(!confirm('Remover jogador?'))return;
+  PLAYERS=PLAYERS.filter(p=>p.id!==id);
+  await dbSet('players',{list:PLAYERS});renderPlayers();populateSelects();flash('Jogador removido');
+}
+
+function verHistorico(id){
+  const p=PLAYERS.find(x=>x.id===id);if(!p)return;
+  document.getElementById('histXPTitle').textContent=p.personagem+' — Histórico XP';
+  const body=document.getElementById('histXPBody');
+  body.innerHTML=!p.historico.length?'<div style="color:var(--tx3);font-style:italic;text-align:center;padding:16px;">Sem registros.</div>':
+    p.historico.map(h=>`<div class="log-entry"><span style="color:${h.tipo==='ganho'?'var(--gr2)':'#f88'}">${h.tipo==='ganho'?'+':'-'}${h.valor} XP</span> — ${h.motivo} <span class="log-time">${fmtTime(h.em)}</span></div>`).join('');
+  openMod('modHistXP');
+}
+
+function updateOnchainInfo(){
+  const id=parseInt(document.getElementById('onchainSel').value);
+  const p=PLAYERS.find(x=>x.id===id);
+  const info=document.getElementById('onchainInfo');
+  if(!p||!p.hashAprovado){info.style.display='none';return;}
+  info.style.display='block';
+  document.getElementById('onchainHash').textContent=p.hashAprovado;
+  const s=p.xpTotal-p.xpGasto;
+  document.getElementById('onchainMeta').innerHTML=`<span class="xp-badge ${s>=0?'xp-ok':'xp-debt'}">${s>=0?'+':''}${s} XP</span><span style="color:var(--tx3);font-size:11px;font-family:var(--mono);">aprovado ${p.aprovadoEm?fmtTime(p.aprovadoEm):''}</span>`;
+}
+
+async function autorizarOnchain(){
+  const id=parseInt(document.getElementById('onchainSel').value);
+  const p=PLAYERS.find(x=>x.id===id);
+  if(!p){flash('Selecione um jogador');return;}
+  if(!p.hashAprovado){flash('Sem hash aprovado para este jogador');return;}
+  if(!CFG.wallet){flash('Configure sua wallet em ⚙ Configurar');return;}
+  // simulação — integre ethers.js para envio real
+  const tx='0x'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  document.getElementById('txResult').textContent='TX simulada: '+tx+'\n→ Para envio real: integre ethers.js + window.ethereum com a ABI do contrato Sepolia.';
+  addLog('Onchain: '+p.personagem+' hash '+p.hashAprovado.slice(0,12)+'...');
+  flash('Autorização onchain registrada (simulada)');
+}
+
+function renderPlayers(){
+  const el=document.getElementById('playersList');
+  if(!PLAYERS.length){el.innerHTML='<div style="text-align:center;color:var(--tx3);font-style:italic;padding:16px;font-size:13px;">Nenhum jogador ainda.</div>';return;}
+  el.innerHTML=PLAYERS.map(p=>{
+    const s=p.xpTotal-p.xpGasto;
+    return `<div class="player-item">
+      <div class="player-name">${p.personagem||'—'} <span style="font-size:11px;color:var(--tx3);font-family:'Cinzel',serif;">/ ${p.nome}</span></div>
+      <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blood2);margin-bottom:8px;">${p.clan||'Clã não definido'}</div>
+      <div class="xp-stats">
+        <div class="xp-stat"><span>Total</span><strong>${p.xpTotal}</strong></div>
+        <div class="xp-stat"><span>Gasto</span><strong>${p.xpGasto}</strong></div>
+        <div class="xp-stat${s<0?' debt':''}"><span>Saldo</span><strong>${s>=0?'+':''}${s}</strong></div>
+      </div>
+      ${p.hashAprovado?`<div style="font-size:10px;color:var(--tx3);font-family:var(--mono);margin-bottom:6px;">hash: ${p.hashAprovado.slice(0,22)}...</div>`:'<div style="font-size:11px;color:var(--tx3);font-style:italic;margin-bottom:6px;">sem hash aprovado</div>'}
+      <div class="btn-row">
+        <button class="btn" onclick="verHistorico(${p.id})" style="font-size:9px;padding:4px 10px;">↗ XP</button>
+        <button class="btn btn-deny" onclick="removerJogador(${p.id})" style="font-size:9px;padding:4px 10px;">✕ Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateSelects(){
+  ['xpPlayerSel','onchainSel'].forEach(sid=>{
+    const sel=document.getElementById(sid);
+    sel.innerHTML=PLAYERS.length?PLAYERS.map(p=>`<option value="${p.id}">${p.personagem||p.nome}</option>`).join(''):'<option value="">— sem jogadores —</option>';
+  });
+  updateOnchainInfo();
+}
+
+async function addLog(msg){
+  LOG.unshift({msg,em:Date.now()});if(LOG.length>100)LOG=LOG.slice(0,100);
+  await dbSet('log',{entries:LOG});renderLog();
+}
+function renderLog(){
+  const el=document.getElementById('logCronica');
+  el.innerHTML=!LOG.length?'<div style="text-align:center;color:var(--tx3);font-style:italic;padding:10px;font-size:13px;">Sem registros.</div>':LOG.slice(0,30).map(e=>`<div class="log-entry">${e.msg} <span class="log-time">${fmtTime(e.em)}</span></div>`).join('');
+}
+
+initDB();
+</script>
+</body>
+</html>

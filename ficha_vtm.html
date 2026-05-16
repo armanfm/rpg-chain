@@ -1,0 +1,1336 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vampiro: A MÃ¡scara</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+:root{
+  --blood:#8B0000;--blood2:#b22222;
+  --ink:#0d0905;--surf:#161008;--card:#1e1510;
+  --br:#3a2a1a;--br2:#5a3a20;
+  --gd:#c9a84c;--gd2:#7a6030;
+  --tx:#e8d9c0;--tx2:#8a7a65;--tx3:#5a4a35;
+  --gr:#3a8a3e;--wp:#3a6aaa;--bo:#d4a017;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--ink);font-family:'Crimson Text',serif;color:var(--tx);min-height:100vh;display:flex;flex-direction:column;}
+
+/* â”€â”€ HEADER â”€â”€ */
+header{background:var(--surf);border-bottom:2px solid var(--blood);padding:8px 18px;display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.htitle{font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--blood2);text-transform:uppercase;}
+#charName{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gd);background:transparent;border:none;outline:none;flex:1;letter-spacing:2px;}
+#charName::placeholder{color:var(--tx3);}
+#charName:focus{border-bottom:1px solid var(--gd2);}
+#saveBadge{font-size:10px;color:var(--tx3);font-style:italic;transition:color .4s;}
+#saveBadge.ok{color:var(--gr);}
+
+/* â”€â”€ TABS â”€â”€ */
+nav{background:var(--ink);border-bottom:1px solid var(--br);display:flex;padding:0 18px;flex-shrink:0;}
+.tab{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;border:none;background:transparent;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;}
+.tab:hover{color:var(--tx2);}
+.tab.on{color:var(--blood2);border-bottom-color:var(--blood);}
+
+/* â”€â”€ CONTENT â”€â”€ */
+main{flex:1;overflow-y:auto;padding:18px;}
+.pane{display:none;} .pane.on{display:block;}
+
+/* â”€â”€ SHARED â”€â”€ */
+.card{background:var(--surf);border:1px solid var(--br);border-radius:2px;overflow:hidden;margin-bottom:12px;}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:var(--card);border-bottom:1px solid var(--br);}
+.card-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gd2);}
+.card-body{padding:10px 14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* â”€â”€ DOTS â”€â”€ */
+.row{display:flex;align-items:center;padding:3px 0;border-bottom:1px dotted rgba(58,42,26,.35);}
+.row:last-child{border-bottom:none;}
+.row-label{flex:1;font-size:13px;color:var(--tx);}
+.row-label.editable{background:transparent;border:none;outline:none;font-family:'Crimson Text',serif;font-style:italic;color:var(--tx);min-width:0;}
+.row-label.editable::placeholder{color:var(--tx3);}
+.dots{display:flex;gap:3px;}
+.dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--blood);cursor:pointer;transition:transform .1s;}
+.dot:hover{transform:scale(1.25);}
+.dot.on{background:var(--blood);}
+.dot.vt{border-color:var(--wp);}
+.dot.vt.on{background:var(--wp);}
+.row-val{font-family:'Cinzel',serif;font-size:11px;color:var(--tx3);width:14px;text-align:right;margin-left:4px;}
+
+/* â”€â”€ INFO FIELDS â”€â”€ */
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 16px;padding:10px 14px;}
+.if-wrap{display:flex;flex-direction:column;gap:2px;}
+.if-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blood);}
+.if-input{background:transparent;border:none;border-bottom:1px solid var(--br);padding:2px 0;font-family:'Crimson Text',serif;font-size:14px;color:var(--tx);outline:none;width:100%;}
+.if-input:focus{border-bottom-color:var(--blood);}
+
+/* â”€â”€ DISC LIST â”€â”€ */
+.disc-item{background:var(--surf);border:1px solid var(--br);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.disc-hd{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--br);}
+.disc-name-in{font-family:'Cinzel',serif;font-size:13px;letter-spacing:2px;color:var(--gd);background:transparent;border:none;outline:none;flex:1;text-transform:uppercase;}
+.disc-name-in:focus{border-bottom:1px solid var(--gd2);}
+.ddots{display:flex;gap:4px;}
+.ddot{width:10px;height:10px;border-radius:50%;border:1px solid var(--blood);cursor:pointer;}
+.ddot.on{background:var(--blood);}
+.btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;padding:3px 10px;border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-ghost{background:transparent;border:1px solid var(--br2);color:var(--tx2);}
+.btn-ghost:hover{border-color:var(--gd2);color:var(--gd);}
+.btn-del{background:transparent;border:1px solid var(--br2);color:var(--tx3);}
+.btn-del:hover{border-color:var(--blood);color:#f88;}
+.btn-add{background:rgba(139,0,0,.2);border:1px solid var(--blood);color:#f99;}
+.btn-add:hover{background:rgba(139,0,0,.4);color:#fff;}
+.btn-prim{background:var(--blood);border:none;color:#fff;padding:9px 0;flex:1;font-size:11px;}
+.btn-prim:hover{background:var(--blood2);}
+.btn-prim:disabled{opacity:.4;cursor:not-allowed;}
+.btn-sec{background:transparent;border:1px solid var(--br2);color:var(--tx2);padding:9px 14px;}
+.btn-sec:hover{background:var(--card);}
+
+/* power row in disc list */
+.prow{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--br);font-size:13px;}
+.prow:last-child{border-bottom:none;}
+.plvl{font-family:'Cinzel',serif;font-size:9px;color:var(--tx3);width:44px;flex-shrink:0;}
+.pname{flex:1;color:var(--tx);}
+.ppool{font-size:11px;color:var(--tx3);font-style:italic;}
+.tag{font-size:10px;padding:1px 6px;border-radius:2px;flex-shrink:0;}
+.t-blood{background:rgba(139,0,0,.3);color:#f88;border:1px solid rgba(139,0,0,.5);}
+.t-wp{background:rgba(58,106,170,.3);color:#8af;border:1px solid rgba(58,106,170,.5);}
+.t-free{background:rgba(58,138,62,.3);color:#8c8;border:1px solid rgba(58,138,62,.5);}
+.t-pas{background:rgba(122,96,48,.4);color:var(--gd);border:1px solid rgba(180,140,60,.4);}
+.t-cena{background:rgba(60,80,140,.3);color:#aaf;border:1px solid rgba(60,80,140,.5);}
+
+/* â”€â”€ MODAL â”€â”€ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:100;}
+.modal{background:var(--surf);border:1px solid var(--br2);border-top:3px solid var(--blood);border-radius:2px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:22px;position:relative;}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--tx3);font-size:20px;cursor:pointer;}
+.modal h3{font-family:'Cinzel',serif;font-size:16px;color:var(--gd);margin-bottom:16px;}
+.frow{margin-bottom:11px;}
+.frow label{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--tx3);margin-bottom:4px;}
+.frow input,.frow textarea,.frow select{width:100%;background:var(--card);border:1px solid var(--br2);border-radius:2px;padding:6px 10px;color:var(--tx);font-family:'Crimson Text',serif;font-size:14px;outline:none;}
+.frow input:focus,.frow textarea:focus,.frow select:focus{border-color:var(--blood);}
+.frow textarea{height:58px;resize:vertical;}
+.frow select option{background:var(--card);}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.modal-btns{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--br);}
+
+/* â”€â”€ COMBATE â”€â”€ */
+.combat-wrap{display:grid;grid-template-columns:1fr 260px;gap:14px;align-items:start;}
+.cleft{display:flex;flex-direction:column;gap:12px;}
+.csidebar{display:flex;flex-direction:column;gap:12px;}
+
+/* scene/turn row */
+.scene-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.trackers{display:flex;gap:8px;align-items:center;}
+.tbox{background:var(--card);border:1px solid var(--br);border-radius:3px;padding:4px 10px;text-align:center;}
+.tbox-lbl{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--tx3);text-transform:uppercase;}
+.tbox-num{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gd);display:flex;align-items:center;gap:5px;}
+.tbox-num.sc{color:#aaf;}
+.tbtn{background:var(--br);border:none;color:var(--tx);width:20px;height:20px;border-radius:2px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.tbtn:hover{background:var(--br2);}
+.scene-adv{background:rgba(139,0,0,.25);border:1px solid var(--blood);color:#f99;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;cursor:pointer;border-radius:2px;}
+.scene-adv:hover{background:rgba(139,0,0,.5);color:#fff;}
+
+/* attr boosts */
+.boost-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.bblock{background:var(--card);border:1px solid var(--br);border-radius:2px;padding:7px 8px;text-align:center;}
+.bblock-name{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--tx2);margin-bottom:3px;}
+.bblock-num{font-family:'Cinzel',serif;font-size:26px;font-weight:700;line-height:1;}
+.bblock-sub{font-size:9px;color:var(--tx3);margin-bottom:5px;}
+.bblock-dots{display:flex;gap:3px;justify-content:center;margin-bottom:6px;}
+.bblock-btn{width:100%;background:rgba(212,160,23,.15);border:1px solid rgba(212,160,23,.4);color:var(--bo);font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:3px 0;cursor:pointer;border-radius:2px;}
+.bblock-btn:hover{background:rgba(212,160,23,.3);}
+.bblock-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* effects */
+.eff-item{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--br);border-left:3px solid var(--blood2);border-radius:2px;padding:5px 10px;margin-bottom:4px;}
+.eff-name{flex:1;font-size:13px;}
+.eff-dur{font-size:10px;color:var(--tx3);font-family:'Cinzel',serif;}
+.eff-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;}
+.eff-rm:hover{color:#f66;}
+
+/* power cards in combat */
+.pcard{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--br);cursor:pointer;transition:background .12s;}
+.pcard:last-child{border-bottom:none;}
+.pcard:hover{background:var(--card);}
+.pbar{width:3px;height:34px;border-radius:1px;flex-shrink:0;}
+.pcard-info{flex:1;}
+.pcard-name{font-family:'Cinzel',serif;font-size:13px;color:var(--tx);}
+.pcard-pool{font-size:11px;color:var(--tx3);font-style:italic;}
+.use-btn{background:var(--blood);border:none;color:#fff;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:5px 9px;cursor:pointer;border-radius:2px;}
+.use-btn:hover{background:var(--blood2);}
+.use-btn.pas{background:var(--gd2);}
+.use-btn.pas:hover{background:var(--gd);color:var(--ink);}
+
+/* sidebar res cards */
+.res{background:var(--surf);border:1px solid var(--br);border-radius:2px;overflow:hidden;}
+.res-hd{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:var(--card);border-bottom:1px solid var(--br);}
+.res-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gd2);}
+.res-val{font-family:'Cinzel',serif;font-size:12px;color:var(--gd);}
+.res-body{padding:8px 10px;}
+.bp-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.bp{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--blood);cursor:pointer;transition:all .1s;}
+.bp.on{background:var(--blood);box-shadow:0 0 3px rgba(139,0,0,.5);}
+.bp:hover{transform:scale(1.15);}
+.qrow{display:flex;gap:5px;margin-top:4px;}
+.qb{flex:1;padding:5px 0;border:1px solid var(--br2);border-radius:2px;background:transparent;color:var(--tx);font-family:'Crimson Text',serif;font-size:12px;cursor:pointer;text-align:center;}
+.qb.sp:hover{background:rgba(139,0,0,.2);border-color:var(--blood);color:#f88;}
+.qb.rg:hover{background:rgba(58,138,62,.2);border-color:var(--gr);color:#8c8;}
+.health-row{display:flex;align-items:center;padding:3px 0;gap:5px;border-bottom:1px dotted rgba(58,42,26,.4);}
+.health-row:last-child{border-bottom:none;}
+.hlbl{flex:1;font-size:12px;color:var(--tx2);}
+.hpen{font-family:'Cinzel',serif;font-size:10px;color:var(--blood);width:18px;text-align:right;}
+.hbox{width:19px;height:19px;border:1.5px solid var(--br2);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:transparent;}
+.hbox:hover{border-color:var(--gd2);}
+.hbox.ba{background:#7a5a00;border-color:#a07800;color:#ffd070;}
+.hbox.le{background:var(--blood);border-color:var(--blood2);color:#faa;}
+.hbox.ag{background:#1a0a0a;border-color:#888;color:#f33;}
+.wp-track{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.wpdot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--wp);cursor:pointer;}
+.wpdot.on{background:var(--wp);}
+.wp-temp{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;}
+.wpt{width:15px;height:8px;border:1.5px solid var(--wp);border-radius:1px;cursor:pointer;}
+.wpt.on{background:var(--wp);}
+
+/* log */
+.log-body{max-height:170px;overflow-y:auto;padding:6px 10px;}
+.lentry{padding:4px 0;border-bottom:1px solid rgba(58,42,26,.3);font-size:12px;line-height:1.4;color:var(--tx2);}
+.lentry:last-child{border-bottom:none;}
+.lr{font-family:'Cinzel',serif;font-size:9px;color:var(--tx3);margin-right:3px;}
+.lp{color:var(--gd);font-style:italic;}.lc{color:#f88;}.lo{color:#8c8;}.lw{color:#fa5;}.ls{color:#aaf;}
+
+/* combat detail modal */
+.cov{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:200;}
+.cmodal{background:var(--surf);border:1px solid var(--br2);border-top:3px solid var(--blood);border-radius:2px;width:420px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:20px;position:relative;}
+.cm-disc{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--blood2);text-transform:uppercase;margin-bottom:3px;}
+.cm-title{font-family:'Cinzel',serif;font-size:20px;color:var(--gd);font-weight:700;margin-bottom:12px;}
+.cm-sec{margin-bottom:10px;}
+.cm-sec-t{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--tx3);text-transform:uppercase;margin-bottom:3px;padding-bottom:3px;border-bottom:1px solid var(--br);}
+.cm-text{font-size:14px;color:var(--tx);line-height:1.5;}
+.cm-tags{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0;}
+.cm-warn{background:rgba(139,0,0,.15);border:1px solid rgba(139,0,0,.4);padding:7px 10px;border-radius:2px;font-size:12px;color:#f88;margin-top:8px;}
+.dice-res{background:var(--card);border:1px solid var(--br2);border-radius:2px;padding:10px;margin-top:10px;text-align:center;}
+.dnums{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:7px 0;}
+.die{width:28px;height:28px;border:1.5px solid var(--br2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:13px;font-weight:700;}
+.die.s{border-color:var(--gr);color:#8c8;background:rgba(58,138,62,.2);}
+.die.f{border-color:var(--br);color:var(--tx3);}
+.die.b{border-color:var(--blood);color:#f66;background:rgba(139,0,0,.2);}
+.dsum{font-family:'Cinzel',serif;font-size:14px;}
+.cm-act{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--br);flex-wrap:wrap;}
+.roll-btn{background:rgba(201,168,76,.12);border:1px solid var(--gd2);color:var(--gd);font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:9px 14px;cursor:pointer;border-radius:2px;}
+.roll-btn:hover{background:rgba(201,168,76,.25);}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--surf);}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px;}
+
+/* ONLINE + XP */
+.top-actions{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.pill{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--br2);color:var(--tx2);padding:4px 8px;border-radius:2px;white-space:nowrap;}
+.pill.ok{border-color:var(--gr);color:#8c8;}.pill.lock{border-color:var(--blood);color:#f99;}
+body.locked input,body.locked textarea,body.locked select{opacity:.72;}body.locked .dot,body.locked .ddot,body.locked .btn-add,body.locked .btn-del{cursor:not-allowed;filter:grayscale(.35);}
+.xp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}.xp-stats div{background:var(--card);border:1px solid var(--br);padding:8px;text-align:center;}.xp-stats span{display:block;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);}.xp-stats strong{font-family:'Cinzel',serif;font-size:22px;color:var(--gd);}.xp-rules{font-size:13px;color:var(--tx2);line-height:1.55;}.xp-item{display:flex;align-items:center;gap:8px;border-bottom:1px dotted rgba(58,42,26,.45);padding:7px 0;font-size:13px;}.xp-item:last-child{border-bottom:none;}.xp-main{flex:1;}.xp-main small{display:block;color:var(--tx3);font-size:11px;}.xp-val{font-family:'Cinzel',serif;color:var(--gd);min-width:42px;text-align:right;}.xp-actions{display:flex;gap:6px;}
+@media(max-width:900px){header{align-items:flex-start;flex-wrap:wrap}.top-actions{width:100%;justify-content:flex-start}.g2,.g3{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr 1fr}.combat-wrap{grid-template-columns:1fr}}
+
+/* ── QUAL/DEF ── */
+.trait-item{background:var(--surf);border:1px solid var(--br);border-radius:2px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;}
+.trait-dots{display:flex;gap:3px;flex-shrink:0;margin-top:3px;}
+.trait-dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--blood);cursor:pointer;}
+.trait-dot.on{background:var(--blood);}
+.trait-dot.flaw{border-color:var(--gd2);}
+.trait-dot.flaw.on{background:var(--gd2);}
+.trait-body{flex:1;}
+.trait-name{font-size:14px;color:var(--tx);margin-bottom:2px;}
+.trait-desc{font-size:12px;color:var(--tx3);font-style:italic;line-height:1.5;}
+.trait-del{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:0;flex-shrink:0;}
+.trait-del:hover{color:#f88;}
+.empty-traits{text-align:center;color:var(--tx3);font-style:italic;padding:16px 0;font-size:13px;}
+.health-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dotted rgba(58,42,26,.3);}
+.health-row:last-child{border-bottom:none;}
+.hlbl{flex:1;font-size:12px;color:var(--tx2);}
+.hpen{font-family:'Cinzel',serif;font-size:10px;color:var(--tx3);width:24px;text-align:center;}
+.hbox{width:22px;height:22px;border:1.5px solid var(--br2);border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;font-weight:700;}
+.hbox.ba{background:rgba(122,90,0,.4);border-color:#7a5a00;color:#c8a020;}
+.hbox.le{background:rgba(139,0,0,.35);border-color:var(--blood);color:#f88;}
+.hbox.ag{background:#111;border-color:#666;color:#999;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="htitle">Vampiro: A MÃ¡scara</div>
+    <input id="charName" placeholder="Nome do Personagem" spellcheck="false"/>
+  </div>
+  <span id="saveBadge">salvo</span>
+  <span id="statusBadge" class="pill">local</span>
+  <div class="top-actions">
+    <button class="btn btn-ghost" onclick="exportarJSON()" title="Exporta o JSON para enviar ao mestre">⬇ Exportar JSON</button>
+    <span id="saveBadge2" style="font-size:10px;color:var(--tx3);font-style:italic;"></span>
+  </div>
+</header>
+
+<nav>
+  <button class="tab on" onclick="goTab('ficha',this)">Ficha</button>
+  <button class="tab" onclick="goTab('disciplinas',this)">Disciplinas</button>
+  <button class="tab" onclick="goTab('qualdef',this)">Qual &amp; Def</button>
+  <button class="tab" onclick="goTab('xp',this)">XP</button>
+  <button class="tab" onclick="goTab('notas',this)">Anotações</button>
+  <button class="tab" onclick="goTab('combate',this)">Combate</button>
+</nav>
+
+<main>
+
+<!-- â•â•â• FICHA â•â•â• -->
+<div class="pane on" id="pane-ficha">
+
+  <div class="card">
+    <div class="card-hd"><span class="card-title">â¬¥ Personagem</span></div>
+    <div class="info-grid" id="infoGrid"></div>
+  </div>
+
+  <div class="g3">
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">FÃ­sicos</span></div><div class="card-body" id="fisicos"></div></div>
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">Social</span></div><div class="card-body" id="social"></div></div>
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">Mentais</span></div><div class="card-body" id="mentais"></div></div>
+  </div>
+
+  <div class="g3" style="margin-top:12px;">
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">Talentos</span></div><div class="card-body" id="talentos"></div></div>
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">PerÃ­cias</span></div><div class="card-body" id="pericias"></div></div>
+    <div class="card" style="margin:0"><div class="card-hd"><span class="card-title">Conhecimentos</span></div><div class="card-body" id="conhecimentos"></div></div>
+  </div>
+
+  <div class="g2" style="margin-top:12px;">
+    <div class="card" style="margin:0">
+      <div class="card-hd"><span class="card-title">â¬¥ Virtudes</span></div>
+      <div class="card-body" id="virtudes"></div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-hd"><span class="card-title">â¬¥ ForÃ§a de Vontade Â· Humanidade Â· Sangue</span></div>
+      <div class="card-body" id="pools"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- â•â•â• DISCIPLINAS â•â•â• -->
+<div class="pane" id="pane-disciplinas">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+    <button class="btn btn-add" onclick="newDisc()">+ Nova Disciplina</button>
+  </div>
+  <div id="discList"></div>
+  <div id="emptyDisc" style="text-align:center;color:var(--tx3);font-style:italic;padding:40px 0;font-size:14px;display:none;">
+    Nenhuma disciplina cadastrada. Clique em "+ Nova Disciplina".
+  </div>
+</div>
+
+
+
+<!-- ═══ QUALIDADES E DEFEITOS ═══ -->
+<div class="pane" id="pane-qualdef">
+  <div class="g2">
+    <div class="card" style="margin:0">
+      <div class="card-hd">
+        <span class="card-title">⬥ Qualidades</span>
+        <button class="btn btn-add" onclick="novaTrait('merit')">+ Adicionar</button>
+      </div>
+      <div class="card-body" id="meritsList">
+        <div class="empty-traits">Nenhuma qualidade cadastrada.</div>
+      </div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-hd">
+        <span class="card-title">⬥ Defeitos</span>
+        <button class="btn btn-add" onclick="novaTrait('flaw')">+ Adicionar</button>
+      </div>
+      <div class="card-body" id="flawsList">
+        <div class="empty-traits">Nenhum defeito cadastrado.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div class="card-hd"><span class="card-title">⬥ Pontos de Bônus</span></div>
+    <div class="card-body">
+      <div id="bonusPoints" style="font-family:'Cinzel',serif;font-size:13px;color:var(--gd);"></div>
+      <div style="font-size:12px;color:var(--tx3);margin-top:6px;line-height:1.6;">
+        Qualidades custam pontos bônus. Defeitos devolvem pontos bônus (máx 7 pts de defeitos na criação).
+        Qualidades e defeitos são incluídos no JSON exportado para o mestre.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ANOTAÇÕES ═══ -->
+<div class="pane" id="pane-notas">
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">⬥ Anotações Privadas</span>
+      <span style="font-size:10px;color:var(--tx3);font-style:italic;">não exportado no JSON</span>
+    </div>
+    <div class="card-body">
+      <textarea id="notasText" rows="20" style="width:100%;background:var(--card);border:1px solid var(--br);border-radius:2px;padding:10px 14px;color:var(--tx);font-family:'Crimson Text',serif;font-size:15px;resize:vertical;line-height:1.7;outline:none;" placeholder="Segredos do personagem, planos, relações, lore pessoal...&#10;&#10;Estas anotações ficam APENAS neste dispositivo e não são enviadas ao mestre."></textarea>
+      <div style="font-size:12px;color:var(--tx3);margin-top:6px;">Salvo automaticamente neste dispositivo.</div>
+    </div>
+  </div>
+</div>
+
+<!-- XP -->
+<div class="pane" id="pane-xp">
+  <div class="g2">
+    <div class="card" style="margin:0">
+      <div class="card-hd"><span class="card-title">XP</span><span class="res-val" id="xpAvailable">0 disponivel</span></div>
+      <div class="card-body">
+        <div class="xp-stats">
+          <div><span>Total ganho</span><strong id="xpTotal">0</strong></div>
+          <div><span>Gasto</span><strong id="xpSpent">0</strong></div>
+          <div><span>Pendente</span><strong id="xpPending">0</strong></div>
+        </div>
+        <div class="modal-btns" style="border-top:none;margin-top:12px;padding-top:0;">
+          <button class="btn btn-add" onclick="openXpGrant()">Mestre da XP</button>
+          <button class="btn btn-prim" onclick="openXpSpend()">Pagar melhoria</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-hd"><span class="card-title">Custos usados</span></div>
+      <div class="card-body xp-rules">
+        <div>Atributo: nivel atual x4</div><div>Habilidade: nivel atual x2; nova habilidade custa 3</div><div>Disciplina do cla: nivel atual x5</div><div>Outra disciplina: nivel atual x7; nova disciplina custa 10</div><div>Virtude: nivel atual x2</div><div>Humanidade/Caminho: nivel atual x2</div><div>Forca de Vontade: nivel atual</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;"><div class="card-hd"><span class="card-title">Historico e pedidos</span></div><div class="card-body" id="xpLog"></div></div>
+</div>
+<!-- â•â•â• COMBATE â•â•â• -->
+<div class="pane" id="pane-combate">
+
+  <div class="scene-row">
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--tx3);letter-spacing:2px;text-transform:uppercase;">Modo Combate</div>
+    <div class="trackers">
+      <div class="tbox">
+        <div class="tbox-lbl">Turno</div>
+        <div class="tbox-num"><button class="tbtn" onclick="chT(-1)">âˆ’</button><span id="tNum">1</span><button class="tbtn" onclick="chT(1)">+</button></div>
+      </div>
+      <div class="tbox">
+        <div class="tbox-lbl">Cena</div>
+        <div class="tbox-num sc"><span id="sNum">1</span></div>
+      </div>
+      <button class="scene-adv" onclick="advScene()">âŸ¶ Nova Cena</button>
+    </div>
+  </div>
+
+  <div class="combat-wrap">
+    <div class="cleft">
+
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">â¬¥ Atributos FÃ­sicos</span>
+          <span style="font-size:11px;color:var(--tx3);font-style:italic;">1 sangue â†’ +1 (atÃ© fim da cena)</span>
+        </div>
+        <div class="card-body">
+          <div class="boost-grid" id="boostGrid"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button class="btn btn-del" onclick="resetBoosts()" style="font-size:10px;padding:2px 10px;">Limpar boosts</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">â¬¥ Efeitos Ativos</span>
+          <span id="effCnt" style="font-family:'Cinzel',serif;font-size:10px;color:var(--tx3);">0</span>
+        </div>
+        <div class="card-body">
+          <div id="effList"><div style="font-size:12px;color:var(--tx3);font-style:italic;text-align:center;padding:6px 0;">Nenhum efeito ativo.</div></div>
+        </div>
+      </div>
+
+      <div id="combatDiscs"></div>
+
+    </div>
+
+    <div class="csidebar">
+
+      <div class="res">
+        <div class="res-hd"><span class="res-title">â¬¥ Sangue</span><span class="res-val" id="bpCnt">â€”</span></div>
+        <div class="res-body">
+          <div class="bp-grid" id="bpGrid"></div>
+          <div class="qrow">
+            <button class="qb sp" onclick="spBlood(1,true)">âˆ’ 1</button>
+            <button class="qb rg" onclick="gnBlood(1)">+ 1</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="res">
+        <div class="res-hd"><span class="res-title">â¬¥ Vitalidade</span><span class="res-val" id="hStat" style="font-size:11px;font-style:italic;color:var(--tx2);">Ileso</span></div>
+        <div class="res-body">
+          <div id="hRows"></div>
+          <div style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--tx3);">
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;background:#7a5a00;border-radius:1px;display:inline-block;"></span>ContusÃ£o</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;background:var(--blood);border-radius:1px;display:inline-block;"></span>Letal</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;background:#1a0a0a;border:1px solid #888;border-radius:1px;display:inline-block;"></span>Agravado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="res">
+        <div class="res-hd"><span class="res-title">â¬¥ ForÃ§a de Vontade</span><span class="res-val" id="wpCnt">â€”</span></div>
+        <div class="res-body">
+          <div style="font-size:9px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;font-family:'Cinzel',serif;margin-bottom:4px;">Permanente</div>
+          <div class="wp-track" id="wpPerm"></div>
+          <div style="font-size:9px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;font-family:'Cinzel',serif;margin-bottom:4px;">TemporÃ¡ria</div>
+          <div class="wp-temp" id="wpTemp"></div>
+          <div class="qrow">
+            <button class="qb sp" onclick="spWP()">âˆ’ 1 FdV</button>
+            <button class="qb rg" onclick="gnWP()">+ 1 FdV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="res">
+        <div class="res-hd">
+          <span class="res-title">â¬¥ Registro</span>
+          <button style="background:none;border:none;color:var(--tx3);font-size:10px;cursor:pointer;font-family:'Crimson Text',serif;" onclick="clearLog()">limpar</button>
+        </div>
+        <div class="log-body" id="log">
+          <div class="lentry" style="color:var(--tx3);font-style:italic;text-align:center;padding:8px 0;">Os atos desta noite serÃ£o registrados aqui.</div>
+        </div>
+      </div>
+
+      <div class="res">
+        <div class="res-hd"><span class="res-title">&#x2B25; Integridade</span></div>
+        <div class="res-body">
+          <div style="font-size:9px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;font-family:'Cinzel',serif;margin-bottom:3px;">Hash atual da ficha</div>
+          <div id="hashAtualDisplay" onclick="computarHash()" title="Clique para calcular" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--gd2);word-break:break-all;background:var(--card);padding:5px 8px;border-radius:2px;margin-bottom:6px;cursor:pointer;">&#8212; clique para calcular &#8212;</div>
+          <div style="font-size:9px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;font-family:'Cinzel',serif;margin-bottom:3px;">Hash aprovado (mestre)</div>
+          <input id="hashAprovadoInput" type="text" placeholder="Cole o hash aprovado..." oninput="verificarIntegridade()" style="width:100%;background:var(--card);border:1px solid var(--br);padding:4px 8px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:9px;border-radius:2px;outline:none;margin-bottom:6px;"/>
+          <div id="hashVerResult" style="display:none;border-radius:2px;padding:5px 8px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:.04em;"></div>
+          <div style="font-size:10px;color:var(--tx3);line-height:1.4;">Se divergirem, a ficha foi alterada desde a aprovac&#807;&#771;o.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- POWER EDIT MODAL -->
+<div class="ov" id="pwMod" style="display:none;" onclick="closePWBg(event)">
+<div class="modal">
+  <button class="modal-close" onclick="closePW()">âœ•</button>
+  <h3 id="pwModTitle">Novo Poder</h3>
+  <div class="fg2">
+    <div class="frow"><label>Nome do Poder</label><input id="pmName"/></div>
+    <div class="frow"><label>NÃ­vel (1â€“5)</label><select id="pmLvl"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+  </div>
+  <div class="frow"><label>DescriÃ§Ã£o / Efeito em Combate</label><textarea id="pmDesc"></textarea></div>
+  <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--blood);margin:4px 0 10px;padding-top:8px;border-top:1px solid var(--br);">Pool de Dados â€” selecione o que este poder usa</div>
+  <div class="fg3">
+    <div class="frow"><label>Atributo</label><select id="pmAttr"></select></div>
+    <div class="frow"><label>Habilidade (opcional)</label><select id="pmSkill"></select></div>
+    <div class="frow"><label>Dificuldade</label><select id="pmDiff"><option>4</option><option>5</option><option value="6" selected>6</option><option>7</option><option>8</option><option>9</option></select></div>
+  </div>
+  <div class="fg3">
+    <div class="frow"><label>Custo Sangue</label><select id="pmBB"><option value="0">0</option><option>1</option><option>2</option><option>3</option></select></div>
+    <div class="frow"><label>Custo FdV</label><select id="pmBW"><option value="0">0</option><option>1</option></select></div>
+    <div class="frow"><label>DuraÃ§Ã£o</label><select id="pmDur"><option value="inst">InstantÃ¢neo</option><option value="turno">1 Turno</option><option value="cena">1 Cena</option><option value="perm">Permanente</option></select></div>
+  </div>
+  <div class="frow"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="pmPas" style="width:auto;"> Poder Passivo (sem rolagem, sempre ativo)</label></div>
+  <div class="modal-btns">
+    <button class="btn btn-prim" onclick="savePW()">Salvar</button>
+    <button class="btn btn-sec" onclick="closePW()">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- COMBAT MODAL -->
+<div class="cov" id="cmOv" style="display:none;" onclick="closeCMBg(event)">
+<div class="cmodal">
+  <button class="modal-close" onclick="closeCM()">âœ•</button>
+  <div class="cm-disc" id="cmDisc"></div>
+  <div class="cm-title" id="cmTitle"></div>
+  <div class="cm-sec"><div class="cm-sec-t">DescriÃ§Ã£o / Efeito</div><div class="cm-text" id="cmDesc"></div></div>
+  <div class="cm-sec">
+    <div class="cm-sec-t">Custo Â· DuraÃ§Ã£o Â· Dados</div>
+    <div class="cm-tags" id="cmTags"></div>
+    <div class="cm-text" id="cmRoll" style="margin-top:5px;font-size:13px;font-style:italic;"></div>
+  </div>
+  <div class="cm-warn" id="cmWarn" style="display:none;"></div>
+  <div class="dice-res" id="cmDres" style="display:none;">
+    <div style="font-size:9px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;font-family:'Cinzel',serif;margin-bottom:4px;">Resultado</div>
+    <div class="dnums" id="cmDnums"></div>
+    <div class="dsum" id="cmDsum"></div>
+  </div>
+  <div class="cm-act">
+    <button class="btn btn-prim" id="cmUse" onclick="activatePwr()">â–¶ Ativar</button>
+    <button class="roll-btn" id="cmRollBtn" onclick="rollCM()">ðŸŽ² Rolar</button>
+    <button class="btn btn-sec" onclick="closeCM()">Fechar</button>
+  </div>
+</div>
+</div>
+
+
+<!-- SETUP MODAL -->
+<div class="ov" id="setupMod" style="display:none;" onclick="closeSetupBg(event)"><div class="modal"><button class="modal-close" onclick="closeSetup()">x</button><h3>Conectar Supabase</h3><div class="frow"><label>URL do projeto</label><input id="sbUrl" placeholder="https://...supabase.co"/></div><div class="frow"><label>Anon public key</label><textarea id="sbKey" style="height:92px;"></textarea></div><div class="frow"><label>ID da ficha atual</label><input id="sheetId" placeholder="vazio ate criar online"/></div><div class="modal-btns"><button class="btn btn-prim" onclick="saveSetup()">Salvar conexao</button><button class="btn btn-sec" onclick="loadOnlineFicha()">Carregar ficha</button><button class="btn btn-sec" onclick="acceptMestreToken()">Aceitar token mestre</button><button class="btn btn-sec" onclick="reopenWithToken()">Reabrir com token</button><button class="btn btn-sec" onclick="mestreEditToken()">Token edicao</button></div></div></div>
+
+<!-- XP MODAL -->
+<div class="ov" id="xpMod" style="display:none;" onclick="closeXpBg(event)"><div class="modal"><button class="modal-close" onclick="closeXp()">x</button><h3 id="xpTitle">XP</h3><div id="xpGrantBox"><div class="fg2"><div class="frow"><label>XP dado</label><input id="xpGrantValue" type="number" min="1" value="1"/></div><div class="frow"><label>Motivo</label><input id="xpGrantReason" placeholder="Sessao, bonus..."/></div></div><div class="modal-btns"><button class="btn btn-prim" onclick="grantXp()">Registrar XP</button></div></div><div id="xpSpendBox" style="display:none;"><div class="fg2"><div class="frow"><label>Tipo</label><select id="xpKind" onchange="buildXpTargets()"></select></div><div class="frow"><label>Alvo</label><select id="xpTarget" onchange="previewXpCost()"></select></div></div><div class="fg2"><div class="frow"><label>Custo calculado</label><input id="xpCost" type="number" min="1"/></div><div class="frow"><label>Pedido</label><input id="xpReason" placeholder="Ex: Aumentar Destreza para 3"/></div></div><div class="modal-btns"><button class="btn btn-prim" onclick="requestXpSpend()">Pedir / pagar XP</button></div></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// STATIC DEFINITIONS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+const ATTRS=[
+  {k:'forca',l:'ForÃ§a',g:'fisico'},{k:'destreza',l:'Destreza',g:'fisico'},{k:'vigor',l:'Vigor',g:'fisico'},
+  {k:'carisma',l:'Carisma',g:'social'},{k:'manipulacao',l:'ManipulaÃ§Ã£o',g:'social'},{k:'aparencia',l:'AparÃªncia',g:'social'},
+  {k:'percepcao',l:'PercepÃ§Ã£o',g:'mental'},{k:'inteligencia',l:'InteligÃªncia',g:'mental'},{k:'raciocinio',l:'RaciocÃ­nio',g:'mental'}
+];
+const SKILLS=[
+  {k:'prontidao',l:'ProntidÃ£o',g:'t'},{k:'esportes',l:'Esportes',g:'t'},{k:'presciencia',l:'PresciÃªncia',g:'t'},
+  {k:'briga',l:'Briga',g:'t'},{k:'empatia',l:'Empatia',g:'t'},{k:'expressao',l:'ExpressÃ£o',g:'t'},
+  {k:'intimidacao',l:'IntimidaÃ§Ã£o',g:'t'},{k:'lideranca',l:'LideranÃ§a',g:'t'},{k:'manha',l:'Manha',g:'t'},
+  {k:'labia',l:'LÃ¡bia',g:'t'},{k:'sk_t_c',l:'',g:'t'},
+  {k:'animais',l:'Empatia c/Animais',g:'p'},{k:'oficios',l:'OfÃ­cios',g:'p'},{k:'conducao',l:'ConduÃ§Ã£o',g:'p'},
+  {k:'etiqueta',l:'Etiqueta',g:'p'},{k:'armas_fogo',l:'Armas de Fogo',g:'p'},{k:'furto',l:'Furto',g:'p'},
+  {k:'armas_brancas',l:'Armas Brancas',g:'p'},{k:'performance',l:'Performance',g:'p'},
+  {k:'furtividade',l:'Furtividade',g:'p'},{k:'sobrevivencia',l:'SobrevivÃªncia',g:'p'},{k:'sk_p_c',l:'',g:'p'},
+  {k:'academicos',l:'AcadÃªmicos',g:'c'},{k:'computador',l:'Computador',g:'c'},{k:'financas',l:'FinanÃ§as',g:'c'},
+  {k:'investigacao',l:'InvestigaÃ§Ã£o',g:'c'},{k:'direito',l:'Direito',g:'c'},{k:'medicina',l:'Medicina',g:'c'},
+  {k:'ocultismo',l:'Ocultismo',g:'c'},{k:'politica',l:'PolÃ­tica',g:'c'},{k:'ciencia',l:'CiÃªncia',g:'c'},
+  {k:'tecnologia',l:'Tecnologia',g:'c'},{k:'sk_c_c',l:'',g:'c'}
+];
+const VIRTUES=[{k:'consciencia',l:'ConsciÃªncia / ConvicÃ§Ã£o'},{k:'autocontrole',l:'Autocontrole / Instinto'},{k:'coragem',l:'Coragem'}];
+const HL=[{l:'Escoriado',p:'â€”'},{l:'Machucado',p:'-1'},{l:'Ferido',p:'-1'},{l:'Ferido Grav.',p:'-2'},{l:'Espancado',p:'-2'},{l:'Aleijado',p:'-5'},{l:'Incapacitado',p:'Inc'}];
+const DUR={inst:'InstantÃ¢neo',turno:'1 Turno',cena:'1 Cena',perm:'Permanente'};
+const FISICOS=['forca','destreza','vigor'];
+const PL={forca:'ForÃ§a',destreza:'Destreza',vigor:'Vigor'};
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// STATE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function defaultData(){
+  const a={},s={},sn={};
+  ATTRS.forEach(x=>a[x.k]=1);
+  SKILLS.forEach(x=>{s[x.k]=0;if(!x.l)sn[x.k]='';});
+  return {
+    info:{name:'',clan:'',gen:'',nature:'',demeanor:'',haven:'',concept:'',player:''},
+    attrs:a, skills:s, skillNames:sn,
+    virtues:{consciencia:1,autocontrole:1,coragem:1},
+    willpower:5, humanidade:7, bloodMax:10,
+    disciplines:[], merits:[], flaws:[], ndi:1, npi:1
+  };
+}
+
+let D=defaultData();
+const CS={turn:1,scene:1,boosts:{forca:0,destreza:0,vigor:0},
+  health:[null,null,null,null,null,null,null],wpTemp:5,bloodCur:10,effects:[],eid:1};
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// STORAGE
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+let _st;
+function save(){
+  clearTimeout(_st);
+  _st=setTimeout(()=>{
+    try{localStorage.setItem('vtm2',JSON.stringify(D));flash();}catch(e){}
+  },400);
+}
+function load(){
+  try{const r=localStorage.getItem('vtm2');if(r){const p=JSON.parse(r);D=Object.assign(defaultData(),p);}}
+  catch(e){}
+}
+function flash(){
+  const b=document.getElementById('saveBadge');
+  b.textContent='âœ“ salvo';b.className='ok';
+  setTimeout(()=>{b.textContent='salvo â—';b.className='';},1400);
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// TABS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function goTab(id,btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pane-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='combate'){renderCombat();initHashVerif();}
+  if(id==='qualdef'){renderTraits();calcBonusPoints();}
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DOTS
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function mkDots(val,max,onChange,vt=false){
+  const w=document.createElement('div');w.className='dots';
+  for(let i=1;i<=max;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i<=val?' on':'')+(vt?' vt':'');
+    d.onclick=()=>{onChange(i===val?i-1:i);};
+    w.appendChild(d);
+  }
+  return w;
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// FICHA RENDER
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function renderFicha(){
+  document.getElementById('charName').value=D.info.name||'';
+
+  // info
+  const ig=document.getElementById('infoGrid');ig.innerHTML='';
+  const IF=[{k:'clan',l:'ClÃ£'},{k:'gen',l:'GeraÃ§Ã£o'},{k:'nature',l:'Natureza'},{k:'demeanor',l:'Comportamento'},{k:'haven',l:'RefÃºgio'},{k:'concept',l:'Conceito'},{k:'player',l:'Jogador'}];
+  IF.forEach(f=>{
+    const w=document.createElement('div');w.className='if-wrap';
+    w.innerHTML=`<div class="if-label">${f.l}</div>`;
+    const inp=document.createElement('input');inp.className='if-input';inp.value=D.info[f.k]||'';
+    inp.oninput=()=>{D.info[f.k]=inp.value;save();};
+    w.appendChild(inp);ig.appendChild(w);
+  });
+
+  // attrs
+  [{id:'fisicos',g:'fisico'},{id:'social',g:'social'},{id:'mentais',g:'mental'}].forEach(({id,g})=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    ATTRS.filter(a=>a.g===g).forEach(a=>{
+      const row=document.createElement('div');row.className='row';
+      const lbl=document.createElement('div');lbl.className='row-label';lbl.textContent=a.l;
+      const dots=mkDots(D.attrs[a.k],5,v=>{D.attrs[a.k]=v;save();renderFicha();});
+      const val=document.createElement('div');val.className='row-val';val.textContent=D.attrs[a.k];
+      row.appendChild(lbl);row.appendChild(dots);row.appendChild(val);el.appendChild(row);
+    });
+  });
+
+  // skills
+  [{id:'talentos',g:'t'},{id:'pericias',g:'p'},{id:'conhecimentos',g:'c'}].forEach(({id,g})=>{
+    const el=document.getElementById(id);el.innerHTML='';
+    SKILLS.filter(s=>s.g===g).forEach(s=>{
+      const row=document.createElement('div');row.className='row';
+      if(!s.l){
+        const inp=document.createElement('input');inp.className='row-label editable';
+        inp.placeholder='EspecializaÃ§Ã£o...';inp.value=D.skillNames[s.k]||'';
+        inp.oninput=()=>{D.skillNames[s.k]=inp.value;save();};
+        row.appendChild(inp);
+      } else {
+        const lbl=document.createElement('div');lbl.className='row-label';lbl.textContent=s.l;row.appendChild(lbl);
+      }
+      const dots=mkDots(D.skills[s.k],5,v=>{D.skills[s.k]=v;save();renderFicha();});
+      const val=document.createElement('div');val.className='row-val';val.textContent=D.skills[s.k];
+      row.appendChild(dots);row.appendChild(val);el.appendChild(row);
+    });
+  });
+
+  // virtues
+  const ve=document.getElementById('virtudes');ve.innerHTML='';
+  VIRTUES.forEach(v=>{
+    const row=document.createElement('div');row.className='row';
+    const lbl=document.createElement('div');lbl.className='row-label';lbl.textContent=v.l;
+    const dots=mkDots(D.virtues[v.k],5,nv=>{D.virtues[v.k]=nv;save();renderFicha();},true);
+    const val=document.createElement('div');val.className='row-val';val.textContent=D.virtues[v.k];
+    row.appendChild(lbl);row.appendChild(dots);row.appendChild(val);ve.appendChild(row);
+  });
+
+  // pools
+  const pe=document.getElementById('pools');pe.innerHTML='';
+  [{label:'ForÃ§a de Vontade',key:'willpower',max:10},{label:'Humanidade / Caminho',key:'humanidade',max:10},{label:'Sangue mÃ¡ximo',key:'bloodMax',max:20}].forEach(({label,key,max})=>{
+    const row=document.createElement('div');row.className='row';
+    const lbl=document.createElement('div');lbl.className='row-label';lbl.textContent=label;
+    const dots=mkDots(D[key],max,v=>{D[key]=v;save();renderFicha();});
+    const val=document.createElement('div');val.className='row-val';val.textContent=D[key];
+    row.appendChild(lbl);row.appendChild(dots);row.appendChild(val);pe.appendChild(row);
+  });
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// DISCIPLINES
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+let _pwDiscId=null,_pwId=null;
+
+function renderDiscs(){
+  const dl=document.getElementById('discList');dl.innerHTML='';
+  const emp=document.getElementById('emptyDisc');
+  if(!D.disciplines.length){emp.style.display='block';return;}
+  emp.style.display='none';
+  D.disciplines.forEach(disc=>{
+    const item=document.createElement('div');item.className='disc-item';
+    // header
+    const hd=document.createElement('div');hd.className='disc-hd';
+    const ni=document.createElement('input');ni.className='disc-name-in';ni.value=disc.name;ni.placeholder='Nome da Disciplina';
+    ni.onclick=e=>e.stopPropagation();
+    ni.oninput=()=>{disc.name=ni.value;save();};
+    const dd=document.createElement('div');dd.className='ddots';
+    for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='ddot'+(i<=disc.dots?' on':'');d.onclick=e=>{e.stopPropagation();disc.dots=i===disc.dots?i-1:i;save();renderDiscs();};dd.appendChild(d);}
+    const addBtn=document.createElement('button');addBtn.className='btn btn-add';addBtn.textContent='+ Poder';
+    addBtn.onclick=e=>{e.stopPropagation();openNewPW(disc.id);};
+    const delBtn=document.createElement('button');delBtn.className='btn btn-del';delBtn.textContent='âœ•';
+    delBtn.onclick=e=>{e.stopPropagation();if(confirm('Remover disciplina "'+disc.name+'"?')){D.disciplines=D.disciplines.filter(d=>d.id!==disc.id);save();renderDiscs();}};
+    hd.appendChild(ni);hd.appendChild(dd);hd.appendChild(addBtn);hd.appendChild(delBtn);
+    item.appendChild(hd);
+    // powers
+    if(disc.powers&&disc.powers.length){
+      disc.powers.forEach(p=>{
+        const pr=document.createElement('div');pr.className='prow';
+        const pool=fmtPool(p);
+        pr.innerHTML=`<span class="plvl">NÃ­vel ${p.level}</span><span class="pname">${p.name||'â€”'}</span><span class="ppool">${pool}</span>`;
+        if(p.passive) pr.innerHTML+=`<span class="tag t-pas">Passivo</span>`;
+        else{
+          if(p.bb>0) pr.innerHTML+=`<span class="tag t-blood">ðŸ©¸${p.bb}</span>`;
+          if(p.bw>0) pr.innerHTML+=`<span class="tag t-wp">ðŸ’™${p.bw}</span>`;
+          if(!p.bb&&!p.bw) pr.innerHTML+=`<span class="tag t-free">GrÃ¡tis</span>`;
+          pr.innerHTML+=`<span class="tag t-cena">${DUR[p.dur]||p.dur}</span>`;
+        }
+        const eb=document.createElement('button');eb.className='btn btn-ghost';eb.textContent='Editar';eb.onclick=()=>openEditPW(disc.id,p.id);
+        const db=document.createElement('button');db.className='btn btn-del';db.textContent='âœ•';
+        db.onclick=()=>{if(confirm('Remover poder?')){disc.powers=disc.powers.filter(x=>x.id!==p.id);save();renderDiscs();}};
+        pr.appendChild(eb);pr.appendChild(db);
+        item.appendChild(pr);
+      });
+    } else {
+      const np=document.createElement('div');np.style.cssText='padding:10px 14px;font-size:12px;color:var(--tx3);font-style:italic;';np.textContent='Nenhum poder cadastrado.';item.appendChild(np);
+    }
+    dl.appendChild(item);
+  });
+}
+
+function fmtPool(p){
+  if(p.passive) return 'Passivo';
+  const a=ATTRS.find(x=>x.k===p.attr)||{l:p.attr==='fdv'?'FdV':''};
+  const s=SKILLS.find(x=>x.k===p.skill);
+  const sn=s?(s.l||D.skillNames[s.k]||'?'):'';
+  let r=a.l||(p.attr==='fdv'?'FdV':'');
+  if(sn) r+=' + '+sn;
+  if(p.diff) r+=` (Dif.${p.diff})`;
+  return r||'â€”';
+}
+
+function newDisc(){
+  D.disciplines.push({id:D.ndi++,name:'',dots:1,powers:[]});
+  save();renderDiscs();
+}
+
+// power modal
+function buildAttrSel(sel){
+  sel.innerHTML='<option value="">â€” Nenhum â€”</option>';
+  [['fisico','â”€â”€ FÃ­sicos â”€â”€'],['social','â”€â”€ Social â”€â”€'],['mental','â”€â”€ Mentais â”€â”€']].forEach(([g,lbl])=>{
+    const og=document.createElement('optgroup');og.label=lbl;
+    ATTRS.filter(a=>a.g===g).forEach(a=>{const o=document.createElement('option');o.value=a.k;o.textContent=a.l;og.appendChild(o);});
+    sel.appendChild(og);
+  });
+  const o=document.createElement('option');o.value='fdv';o.textContent='ForÃ§a de Vontade';sel.appendChild(o);
+}
+function buildSkillSel(sel){
+  sel.innerHTML='<option value="">â€” Nenhuma â€”</option>';
+  [['t','â”€â”€ Talentos â”€â”€'],['p','â”€â”€ PerÃ­cias â”€â”€'],['c','â”€â”€ Conhecimentos â”€â”€']].forEach(([g,lbl])=>{
+    const og=document.createElement('optgroup');og.label=lbl;
+    SKILLS.filter(s=>s.g===g).forEach(s=>{
+      const o=document.createElement('option');o.value=s.k;
+      o.textContent=s.l||(D.skillNames[s.k]||'EspecializaÃ§Ã£o');
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+
+function openNewPW(discId){
+  _pwDiscId=discId;_pwId=null;
+  document.getElementById('pwModTitle').textContent='Novo Poder';
+  ['pmName','pmDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pmLvl').value='1';
+  document.getElementById('pmBB').value='0';document.getElementById('pmBW').value='0';
+  document.getElementById('pmDur').value='inst';document.getElementById('pmDiff').value='6';
+  document.getElementById('pmPas').checked=false;
+  buildAttrSel(document.getElementById('pmAttr'));
+  buildSkillSel(document.getElementById('pmSkill'));
+  document.getElementById('pwMod').style.display='flex';
+}
+function openEditPW(discId,pwId){
+  _pwDiscId=discId;_pwId=pwId;
+  const disc=D.disciplines.find(d=>d.id===discId);
+  const p=disc&&disc.powers.find(x=>x.id===pwId);
+  if(!p) return;
+  document.getElementById('pwModTitle').textContent='Editar Poder';
+  document.getElementById('pmName').value=p.name||'';
+  document.getElementById('pmLvl').value=p.level||1;
+  document.getElementById('pmDesc').value=p.desc||'';
+  document.getElementById('pmBB').value=p.bb||0;document.getElementById('pmBW').value=p.bw||0;
+  document.getElementById('pmDur').value=p.dur||'inst';document.getElementById('pmDiff').value=p.diff||6;
+  document.getElementById('pmPas').checked=!!p.passive;
+  buildAttrSel(document.getElementById('pmAttr'));
+  buildSkillSel(document.getElementById('pmSkill'));
+  document.getElementById('pmAttr').value=p.attr||'';
+  document.getElementById('pmSkill').value=p.skill||'';
+  document.getElementById('pwMod').style.display='flex';
+}
+function closePW(){document.getElementById('pwMod').style.display='none';}
+function closePWBg(e){if(e.target.id==='pwMod')closePW();}
+function savePW(){
+  const name=document.getElementById('pmName').value.trim();
+  if(!name){alert('Nome obrigatÃ³rio');return;}
+  const disc=D.disciplines.find(d=>d.id===_pwDiscId);if(!disc) return;
+  const pwr={
+    id:_pwId||D.npi++,name,level:+document.getElementById('pmLvl').value,
+    desc:document.getElementById('pmDesc').value,
+    attr:document.getElementById('pmAttr').value,
+    skill:document.getElementById('pmSkill').value,
+    diff:+document.getElementById('pmDiff').value,
+    bb:+document.getElementById('pmBB').value,bw:+document.getElementById('pmBW').value,
+    dur:document.getElementById('pmDur').value,
+    passive:document.getElementById('pmPas').checked
+  };
+  if(_pwId){const i=disc.powers.findIndex(x=>x.id===_pwId);if(i>=0)disc.powers[i]=pwr;}
+  else disc.powers.push(pwr);
+  save();closePW();renderDiscs();
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// COMBAT
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function getAttrV(k){
+  if(k==='fdv') return D.willpower;
+  return (D.attrs[k]||0)+(CS.boosts[k]||0);
+}
+function calcDice(p){
+  let d=0;
+  if(p.attr) d+=getAttrV(p.attr);
+  if(p.skill) d+=D.skills[p.skill]||0;
+  return Math.max(0,d);
+}
+function poolStr(p){
+  if(p.passive) return 'Passivo';
+  const dice=calcDice(p);
+  return fmtPool(p)+(dice?` â†’ ${dice} dados`:'');
+}
+
+function renderCombat(){
+  CS.bloodCur=Math.min(CS.bloodCur,D.bloodMax);
+  CS.wpTemp=Math.min(CS.wpTemp,D.willpower);
+  renderBoosts();renderEffects();renderCombatDiscs();renderBlood();renderHealth();renderWP();
+}
+
+// boosts
+function renderBoosts(){
+  const g=document.getElementById('boostGrid');g.innerHTML='';
+  FISICOS.forEach(k=>{
+    const base=D.attrs[k]||1,boost=CS.boosts[k]||0,total=base+boost,canB=CS.bloodCur>0&&total<5;
+    const b=document.createElement('div');b.className='bblock';
+    b.innerHTML=`<div class="bblock-name">${PL[k]}</div>
+      <div class="bblock-num" style="color:${boost>0?'var(--bo)':'var(--gd)'}">${total}</div>
+      <div class="bblock-sub">${boost>0?`${base}+${boost}`:' '}</div>
+      <div class="bblock-dots">${Array.from({length:5},(_,i)=>`<div class="dot${i<base?' on':i<total?' on':''}${i>=base&&i<total?' style="background:var(--bo);border-color:var(--bo);"':''}"></div>`).join('')}</div>
+      <button class="bblock-btn" ${canB?'':'disabled'} onclick="boostAttr('${k}')">ðŸ©¸ +1 ${PL[k]}</button>`;
+    g.appendChild(b);
+  });
+}
+function boostAttr(k){
+  if(CS.bloodCur<=0){lg('<span class="lw">âš  Sem sangue!</span>');return;}
+  CS.bloodCur--;CS.boosts[k]=(CS.boosts[k]||0)+1;
+  renderBoosts();renderBlood();
+  lg(`<span class="lo">${PL[k]}</span> bombado <span class="lc">-1 sangue</span> â†’ total ${(D.attrs[k]||0)+CS.boosts[k]}`);
+}
+function resetBoosts(){CS.boosts={forca:0,destreza:0,vigor:0};renderBoosts();lg('<span class="lw">Boosts resetados.</span>');}
+
+// effects
+function addFx(name,dur,disc){
+  if(dur==='inst'||dur==='perm') return;
+  CS.effects.push({id:CS.eid++,name,dur,disc,sc:CS.scene,t:CS.turn});renderEffects();
+}
+function rmFx(id){CS.effects=CS.effects.filter(e=>e.id!==id);renderEffects();}
+function renderEffects(){
+  const el=document.getElementById('effList');el.innerHTML='';
+  document.getElementById('effCnt').textContent=CS.effects.length;
+  if(!CS.effects.length){el.innerHTML='<div style="font-size:12px;color:var(--tx3);font-style:italic;text-align:center;padding:6px 0;">Nenhum efeito ativo.</div>';return;}
+  CS.effects.forEach(e=>{
+    const d=document.createElement('div');d.className='eff-item';
+    d.innerHTML=`<div class="eff-name"><span style="color:var(--gd);font-size:11px;">${e.disc}</span> â€” ${e.name}</div>
+      <div class="eff-dur" style="color:${e.dur==='cena'?'#aaf':'#fca'}">${e.dur==='cena'?'Cena '+e.sc:'T'+e.t}</div>
+      <button class="eff-rm" onclick="rmFx(${e.id})">âœ•</button>`;
+    el.appendChild(d);
+  });
+}
+
+// combat disc list
+function renderCombatDiscs(){
+  const el=document.getElementById('combatDiscs');el.innerHTML='';
+  if(!D.disciplines.length){
+    el.innerHTML='<div style="text-align:center;color:var(--tx3);font-style:italic;padding:20px 0;font-size:13px;">VÃ¡ Ã  aba Disciplinas para cadastrar seus poderes.</div>';
+    return;
+  }
+  const barC={1:'#4a1a1a',2:'var(--blood)',3:'var(--blood2)',4:'#e67e22',5:'#f39c12'};
+  D.disciplines.forEach(disc=>{
+    const block=document.createElement('div');block.className='card';block.style.marginBottom='10px';
+    const hd=document.createElement('div');hd.className='card-hd';
+    hd.innerHTML=`<span class="card-title">${disc.name}</span><div class="ddots">${Array.from({length:5},(_,i)=>`<div class="ddot${i<disc.dots?' on':''}"></div>`).join('')}</div>`;
+    block.appendChild(hd);
+    const pl=document.createElement('div');
+    (disc.powers||[]).forEach(p=>{
+      const c=document.createElement('div');c.className='pcard';
+      c.innerHTML=`<div class="pbar" style="background:${barC[p.level]||'var(--blood)'}"></div>
+        <div class="pcard-info"><div class="pcard-name">${p.name}</div><div class="pcard-pool">${poolStr(p)}</div></div>
+        ${p.bb>0?`<span class="tag t-blood">ðŸ©¸${p.bb}</span>`:''}
+        ${p.bw>0?`<span class="tag t-wp">ðŸ’™${p.bw}</span>`:''}
+        <button class="use-btn${p.passive?' pas':''}">${p.passive?'Ver':'Usar'}</button>`;
+      c.onclick=(e)=>{if(!e.target.classList.contains('use-btn'))return;openCM(disc,p);};
+      c.querySelector('.use-btn').onclick=(e)=>{e.stopPropagation();openCM(disc,p);};
+      pl.appendChild(c);
+    });
+    block.appendChild(pl);el.appendChild(block);
+  });
+}
+
+// turn/scene
+function chT(d){CS.turn=Math.max(1,CS.turn+d);document.getElementById('tNum').textContent=CS.turn;if(d>0)lg(`â”â” <span style="color:var(--gd2);font-family:'Cinzel',serif;">Turno ${CS.turn}</span> â”â”`);}
+function advScene(){
+  CS.scene++;CS.turn=1;
+  document.getElementById('sNum').textContent=CS.scene;
+  document.getElementById('tNum').textContent='1';
+  const exp=CS.effects.filter(e=>e.dur==='cena').map(e=>e.name);
+  CS.effects=CS.effects.filter(e=>e.dur!=='cena');
+  let hb=false;FISICOS.forEach(k=>{if(CS.boosts[k]>0){hb=true;CS.boosts[k]=0;}});
+  renderBoosts();renderEffects();
+  lg(`<span class="ls">â”â” Cena ${CS.scene} â”â”</span>`);
+  if(hb) lg('<span class="lw">âš  Boosts expiraram.</span>');
+  if(exp.length) lg(`<span class="lw">âš  Expirado: ${exp.join(', ')}</span>`);
+}
+
+// blood
+function renderBlood(){
+  const g=document.getElementById('bpGrid');g.innerHTML='';
+  for(let i=0;i<D.bloodMax;i++){const d=document.createElement('div');d.className='bp'+(i<CS.bloodCur?' on':'');d.onclick=()=>i<CS.bloodCur?spBlood(1,true):gnBlood(1);g.appendChild(d);}
+  document.getElementById('bpCnt').textContent=`${CS.bloodCur}/${D.bloodMax}`;
+}
+function spBlood(n,doLog){if(CS.bloodCur<=0){lg('<span class="lw">âš  Sem sangue!</span>');return;}CS.bloodCur=Math.max(0,CS.bloodCur-n);renderBlood();renderBoosts();if(doLog)lg(`<span class="lc">-${n} sangue</span> (${CS.bloodCur} rest.)`);}
+function gnBlood(n){CS.bloodCur=Math.min(D.bloodMax,CS.bloodCur+n);renderBlood();renderBoosts();lg(`<span class="lo">+${n} sangue</span>`);}
+
+// health
+function renderHealth(){
+  const el=document.getElementById('hRows');el.innerHTML='';
+  HL.forEach((h,i)=>{
+    const dmg=CS.health[i];
+    const cls=dmg==='b'?'ba':dmg==='l'?'le':dmg==='a'?'ag':'';
+    const ch=dmg==='b'?'/':dmg==='l'?'âœ•':dmg==='a'?'*':'';
+    const row=document.createElement('div');row.className='health-row';
+    row.innerHTML=`<div class="hlbl">${h.l}</div><div class="hpen">${h.p}</div><div class="hbox ${cls}" onclick="cycleH(${i})">${ch}</div>`;
+    el.appendChild(row);
+  });
+  const w=CS.health.findIndex(h=>h!==null);
+  const st=document.getElementById('hStat');
+  const sl=['Escoriado','Machucado','Ferido','Ferido Grav.','Espancado','Aleijado','Incapacitado'];
+  if(w===-1){st.textContent='Ileso';st.style.color='var(--gr)';}
+  else if(w>=6){st.textContent='INCAPACITADO';st.style.color='#f44';}
+  else{st.textContent=sl[w];st.style.color=w>4?'#f88':w>2?'#fa5':'var(--tx2)';}
+}
+function cycleH(i){
+  const c={'null':'b',b:'l',l:'a',a:null};CS.health[i]=c[String(CS.health[i])];renderHealth();
+  const t={b:'ContusÃ£o',l:'Letal',a:'Agravado',null:'Curado'};
+  lg(`${HL[i].l}: <span class="lc">${t[String(CS.health[i])]||'Curado'}</span>`);
+}
+
+// willpower
+function renderWP(){
+  CS.wpTemp=Math.min(CS.wpTemp,D.willpower);
+  const pe=document.getElementById('wpPerm');pe.innerHTML='';
+  for(let i=0;i<10;i++){const d=document.createElement('div');d.className='wpdot'+(i<D.willpower?' on':'');d.style.opacity=i<D.willpower?'1':'0.2';pe.appendChild(d);}
+  const te=document.getElementById('wpTemp');te.innerHTML='';
+  for(let i=0;i<D.willpower;i++){const d=document.createElement('div');d.className='wpt'+(i<CS.wpTemp?' on':'');d.onclick=()=>i<CS.wpTemp?spWP():gnWP();te.appendChild(d);}
+  document.getElementById('wpCnt').textContent=`${CS.wpTemp}/${D.willpower}`;
+}
+function spWP(n=1){if(CS.wpTemp<=0){lg('<span class="lw">âš  Sem FdV!</span>');return;}CS.wpTemp=Math.max(0,CS.wpTemp-n);renderWP();}
+function gnWP(n=1){CS.wpTemp=Math.min(D.willpower,CS.wpTemp+n);renderWP();}
+
+// log
+function lg(msg){
+  const l=document.getElementById('log');
+  if(l.children[0]&&l.children[0].style.textAlign==='center') l.innerHTML='';
+  const e=document.createElement('div');e.className='lentry';
+  e.innerHTML=`<span class="lr">C${CS.scene}Â·T${CS.turn}</span> ${msg}`;
+  l.prepend(e);
+}
+function clearLog(){document.getElementById('log').innerHTML='<div class="lentry" style="color:var(--tx3);font-style:italic;text-align:center;padding:8px 0;">Os atos desta noite serÃ£o registrados aqui.</div>';}
+
+// combat modal
+let _cd=null,_cp=null;
+function openCM(disc,p){
+  _cd=disc;_cp=p;
+  document.getElementById('cmDisc').textContent=`${disc.name} Â· NÃ­vel ${p.level}`;
+  document.getElementById('cmTitle').textContent=p.name;
+  document.getElementById('cmDesc').textContent=p.desc||'';
+  const dice=calcDice(p);
+  const tags=document.getElementById('cmTags');tags.innerHTML='';
+  if(p.passive){tags.innerHTML='<span class="tag t-pas">Passivo â€” Sempre ativo</span>';}
+  else{
+    if(!p.bb&&!p.bw) tags.innerHTML+='<span class="tag t-free">Sem custo</span>';
+    if(p.bb>0) tags.innerHTML+=`<span class="tag t-blood">ðŸ©¸ ${p.bb} Sangue</span>`;
+    if(p.bw>0) tags.innerHTML+=`<span class="tag t-wp">ðŸ’™ ${p.bw} FdV</span>`;
+    tags.innerHTML+=`<span class="tag t-cena">â± ${DUR[p.dur]||p.dur}</span>`;
+  }
+  document.getElementById('cmRoll').textContent=p.passive?'':
+    `${fmtPool(p)} â†’ ${dice} dados`;
+  const w=document.getElementById('cmWarn');let wt='';
+  if(p.bb>0&&CS.bloodCur<p.bb) wt+=`âš  Sangue insuficiente (${CS.bloodCur}/${p.bb}). `;
+  if(p.bw>0&&CS.wpTemp<p.bw) wt+='âš  FdV insuficiente. ';
+  w.style.display=wt?'block':'none';w.textContent=wt;
+  document.getElementById('cmDres').style.display='none';
+  const ub=document.getElementById('cmUse'),rb=document.getElementById('cmRollBtn');
+  ub.style.display=p.passive?'none':'block';
+  rb.style.display=(p.passive||dice===0)?'none':'block';
+  ub.textContent='â–¶ Ativar';ub.disabled=false;
+  document.getElementById('cmOv').style.display='flex';
+}
+function closeCM(){document.getElementById('cmOv').style.display='none';_cd=null;_cp=null;}
+function closeCMBg(e){if(e.target.id==='cmOv')closeCM();}
+
+function activatePwr(){
+  if(!_cp) return;
+  if(_cp.bb>0&&CS.bloodCur<_cp.bb){const w=document.getElementById('cmWarn');w.style.display='block';w.textContent='âš  Sangue insuficiente!';return;}
+  if(_cp.bw>0&&CS.wpTemp<_cp.bw){const w=document.getElementById('cmWarn');w.style.display='block';w.textContent='âš  FdV insuficiente!';return;}
+  if(_cp.bb>0) spBlood(_cp.bb,false);
+  if(_cp.bw>0) spWP(_cp.bw);
+  addFx(_cp.name,_cp.dur,_cd.name);
+  rollCM();
+  let m=`<span class="lp">${_cd.name}: ${_cp.name}</span> ativado`;
+  if(_cp.bb>0) m+=` <span class="lc">-${_cp.bb} sangue</span>`;
+  if(_cp.bw>0) m+=` <span class="lc">-${_cp.bw} FdV</span>`;
+  lg(m);
+  document.getElementById('cmUse').textContent='âœ“ Ativado';
+  document.getElementById('cmUse').disabled=true;
+}
+
+function rollCM(){
+  if(!_cp) return;
+  const num=calcDice(_cp);
+  if(num===0){lg('<span class="lw">Pool 0 â€” sem dados.</span>');return;}
+  const diff=_cp.diff||6;
+  const rs=Array.from({length:num},()=>Math.floor(Math.random()*10)+1);
+  let suc=0,ones=0;rs.forEach(r=>{if(r>=diff)suc++;if(r===1)ones++;});
+  const botch=!suc&&ones>0,net=Math.max(0,suc-ones);
+  const dn=document.getElementById('cmDnums');dn.innerHTML='';
+  rs.forEach(r=>{const d=document.createElement('div');d.className='die '+(r===1?'b':r>=diff?'s':'f');d.textContent=r;dn.appendChild(d);});
+  const ds=document.getElementById('cmDsum');
+  if(botch){ds.textContent='ðŸ’€ Falha CrÃ­tica!';ds.style.color='#f44';lg(`<span class="lw">ðŸ’€ Falha CrÃ­tica â€” ${_cp.name}!</span>`);}
+  else if(!net){ds.textContent='Falha â€” 0 sucessos';ds.style.color='var(--tx3)';}
+  else{ds.textContent=`${net} sucesso${net>1?'s':''}`;ds.style.color='#8c8';}
+  document.getElementById('cmDres').style.display='block';
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+// ONLINE, LOCK AND XP EXTENSION
+const XP_KIND_LABELS={attr:'Atributo',skill:'Habilidade',discClan:'Disciplina do cla',discOther:'Outra disciplina',virtue:'Virtude',humanity:'Humanidade/Caminho',willpower:'Forca de Vontade'};
+let APP={client:null,user:null,fichaId:null,status:'rascunho',role:'local',saving:false};
+function ensureMeta(){D.meta=D.meta||{};D.meta.xp=D.meta.xp||{total:0,spent:0,moves:[]};return D.meta.xp;}
+function xpAvailable(){const x=ensureMeta();return Math.max(0,(+x.total||0)-(+x.spent||0));}
+function canEdit(){return APP.role==='local'||APP.status==='rascunho'||APP.status==='reaberta';}
+function setLockedUi(){document.body.classList.toggle('locked',!canEdit());const b=document.getElementById('statusBadge');if(!b)return;b.className='pill '+(APP.client?'ok ':'')+(!canEdit()?'lock':'');b.textContent=(APP.client?'online ':'local ')+(APP.status||'rascunho')+(APP.role&&APP.role!=='local'?' / '+APP.role:'');}
+function safeChange(fn){if(!canEdit()){alert('Ficha finalizada. Peca ao mestre um token de edicao.');return false;}fn();return true;}
+function flashMsg(msg,ok=true){const b=document.getElementById('saveBadge');b.textContent=msg;b.className=ok?'ok':'';setTimeout(()=>{b.textContent='salvo';b.className='';},1700);}
+function touchRender(){renderFicha();renderDiscs();renderXp();setLockedUi();}
+function openSetup(){document.getElementById('sbUrl').value=localStorage.getItem('vtm_sb_url')||'';document.getElementById('sbKey').value=localStorage.getItem('vtm_sb_key')||'';document.getElementById('sheetId').value=APP.fichaId||localStorage.getItem('vtm_ficha_id')||'';document.getElementById('setupMod').style.display='flex';}
+function closeSetup(){document.getElementById('setupMod').style.display='none';}function closeSetupBg(e){if(e.target.id==='setupMod')closeSetup();}
+function saveSetup(){localStorage.setItem('vtm_sb_url',document.getElementById('sbUrl').value.trim());localStorage.setItem('vtm_sb_key',document.getElementById('sbKey').value.trim());localStorage.setItem('vtm_ficha_id',document.getElementById('sheetId').value.trim());initSupabase();closeSetup();}
+function initSupabase(){const url=localStorage.getItem('vtm_sb_url'),key=localStorage.getItem('vtm_sb_key');APP.fichaId=localStorage.getItem('vtm_ficha_id')||APP.fichaId;if(url&&key&&window.supabase){APP.client=window.supabase.createClient(url,key);APP.client.auth.getUser().then(({data})=>{APP.user=data.user||null;setLockedUi();});}setLockedUi();}
+async function loginEmail(){initSupabase();if(!APP.client){openSetup();return;}const email=prompt('Email para entrar');if(!email)return;const {error}=await APP.client.auth.signInWithOtp({email});if(error)alert(error.message);else alert('Veja seu email para confirmar o login.');}
+async function logoutUser(){if(APP.client)await APP.client.auth.signOut();APP.user=null;APP.role='local';setLockedUi();}
+async function createOnlineFicha(){initSupabase();if(!APP.client){openSetup();return;}const {data,error}=await APP.client.rpc('criar_ficha',{p_nome:D.info.name||'Ficha sem nome',p_dados:D});if(error){alert(error.message);return;}APP.fichaId=data.id;APP.status=data.status;APP.role='jogador';localStorage.setItem('vtm_ficha_id',data.id);flashMsg('ficha online criada');setLockedUi();}
+async function loadOnlineFicha(){initSupabase();const id=document.getElementById('sheetId').value.trim()||APP.fichaId;if(!APP.client||!id){openSetup();return;}const {data,error}=await APP.client.from('fichas').select('*').eq('id',id).single();if(error){alert(error.message);return;}APP.fichaId=data.id;APP.status=data.status;APP.role=data.jogador_id===APP.user?.id?'jogador':'mestre';localStorage.setItem('vtm_ficha_id',data.id);D=Object.assign(defaultData(),data.dados||{});D.info=D.info||{};D.info.name=data.nome||D.info.name||'';ensureMeta();if(typeof data.xp_total==='number')D.meta.xp.total=data.xp_total;if(typeof data.xp_gasto==='number')D.meta.xp.spent=data.xp_gasto;closeSetup();touchRender();flashMsg('ficha carregada');}
+async function saveOnlineNow(){if(!APP.client||!APP.fichaId||APP.saving||!canEdit())return;APP.saving=true;const {error}=await APP.client.from('fichas').update({nome:D.info.name||'',dados:D}).eq('id',APP.fichaId);APP.saving=false;if(error)flashMsg('erro online',false);else flashMsg('salvo online');}
+async function shareWithMestre(){if(!APP.client||!APP.fichaId){openSetup();return;}const {data,error}=await APP.client.rpc('gerar_token_mestre',{p_ficha_id:APP.fichaId});if(error){alert(error.message);return;}prompt('Token do mestre. Envie para ele:',data);}
+async function acceptMestreToken(){initSupabase();if(!APP.client){openSetup();return;}const token=prompt('Cole o token que o jogador mandou');if(!token)return;const {data,error}=await APP.client.rpc('aceitar_token_mestre',{p_token:token.trim()});if(error){alert(error.message);return;}APP.fichaId=data.id;APP.status=data.status;APP.role='mestre';localStorage.setItem('vtm_ficha_id',data.id);D=Object.assign(defaultData(),data.dados||{});ensureMeta();if(typeof data.xp_total==='number')D.meta.xp.total=data.xp_total;if(typeof data.xp_gasto==='number')D.meta.xp.spent=data.xp_gasto;closeSetup();touchRender();}
+async function finishFicha(){if(!APP.client||!APP.fichaId){alert('Crie ou carregue a ficha online antes de finalizar.');return;}if(!confirm('Finalizar trava a ficha para o jogador. Continuar?'))return;await saveOnlineNow();const {data,error}=await APP.client.rpc('finalizar_ficha',{p_ficha_id:APP.fichaId});if(error){alert(error.message);return;}APP.status=data.status;touchRender();flashMsg('ficha finalizada');}
+async function reopenWithToken(){initSupabase();if(!APP.client){openSetup();return;}const token=prompt('Cole o token de edicao dado pelo mestre');if(!token)return;const {data,error}=await APP.client.rpc('reabrir_ficha_com_token',{p_token:token.trim()});if(error){alert(error.message);return;}APP.fichaId=data.id;APP.status=data.status;APP.role='jogador';D=Object.assign(defaultData(),data.dados||{});ensureMeta();if(typeof data.xp_total==='number')D.meta.xp.total=data.xp_total;if(typeof data.xp_gasto==='number')D.meta.xp.spent=data.xp_gasto;closeSetup();touchRender();}
+async function mestreEditToken(){if(!APP.client||!APP.fichaId){openSetup();return;}const {data,error}=await APP.client.rpc('gerar_token_edicao',{p_ficha_id:APP.fichaId});if(error){alert(error.message);return;}prompt('Token de edicao para o jogador:',data);}
+function openXpGrant(){document.getElementById('xpTitle').textContent='Mestre da XP';document.getElementById('xpGrantBox').style.display='block';document.getElementById('xpSpendBox').style.display='none';document.getElementById('xpMod').style.display='flex';}
+function openXpSpend(){document.getElementById('xpTitle').textContent='Pagar melhoria';document.getElementById('xpGrantBox').style.display='none';document.getElementById('xpSpendBox').style.display='block';buildXpKinds();document.getElementById('xpMod').style.display='flex';}
+function closeXp(){document.getElementById('xpMod').style.display='none';}function closeXpBg(e){if(e.target.id==='xpMod')closeXp();}
+function buildXpKinds(){const s=document.getElementById('xpKind');s.innerHTML='';Object.entries(XP_KIND_LABELS).forEach(([k,l])=>{const o=document.createElement('option');o.value=k;o.textContent=l;s.appendChild(o);});buildXpTargets();}
+function buildXpTargets(){const kind=document.getElementById('xpKind').value,t=document.getElementById('xpTarget');t.innerHTML='';let list=[];if(kind==='attr')list=ATTRS.map(a=>[a.k,a.l]);if(kind==='skill')list=SKILLS.map(s=>[s.k,s.l||D.skillNames[s.k]||'Especializacao']);if(kind==='virtue')list=VIRTUES.map(v=>[v.k,v.l]);if(kind==='discClan'||kind==='discOther')list=D.disciplines.map(d=>[d.id,d.name||'Disciplina']);if(kind==='humanity')list=[['humanidade','Humanidade / Caminho']];if(kind==='willpower')list=[['willpower','Forca de Vontade']];list.forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;t.appendChild(o);});previewXpCost();}
+function currentFor(kind,target){if(kind==='attr')return D.attrs[target]||0;if(kind==='skill')return D.skills[target]||0;if(kind==='virtue')return D.virtues[target]||0;if(kind==='humanity')return D.humanidade||0;if(kind==='willpower')return D.willpower||0;if(kind==='discClan'||kind==='discOther'){const d=D.disciplines.find(x=>String(x.id)===String(target));return d?d.dots||0:0;}return 0;}
+function calcXpCost(kind,target){const cur=currentFor(kind,target);if(kind==='skill')return cur<=0?3:cur*2;if(kind==='discClan')return cur<=0?10:cur*5;if(kind==='discOther')return cur<=0?10:cur*7;if(kind==='attr')return Math.max(1,cur)*4;if(kind==='virtue'||kind==='humanity')return Math.max(1,cur)*2;if(kind==='willpower')return Math.max(1,cur);return 1;}
+function previewXpCost(){const k=document.getElementById('xpKind').value,t=document.getElementById('xpTarget').value;document.getElementById('xpCost').value=calcXpCost(k,t);const name=document.getElementById('xpTarget').selectedOptions[0]?.textContent||'';document.getElementById('xpReason').value=name?`Aumentar ${name} de ${currentFor(k,t)} para ${currentFor(k,t)+1}`:'';}
+function applyXpUpgrade(kind,target){if(kind==='attr')D.attrs[target]=(D.attrs[target]||0)+1;else if(kind==='skill')D.skills[target]=(D.skills[target]||0)+1;else if(kind==='virtue')D.virtues[target]=(D.virtues[target]||0)+1;else if(kind==='humanity')D.humanidade=(D.humanidade||0)+1;else if(kind==='willpower')D.willpower=(D.willpower||0)+1;else if(kind==='discClan'||kind==='discOther'){const d=D.disciplines.find(x=>String(x.id)===String(target));if(d)d.dots=(d.dots||0)+1;}}
+async function grantXp(){const val=+document.getElementById('xpGrantValue').value,reason=document.getElementById('xpGrantReason').value.trim()||'XP concedido';if(val<=0)return;if(APP.client&&APP.role!=='mestre'){alert('So o mestre pode dar XP online.');return;}if(APP.client&&APP.fichaId){const {error}=await APP.client.rpc('dar_xp',{p_ficha_id:APP.fichaId,p_valor:val,p_motivo:reason});if(error){alert(error.message);return;}}const x=ensureMeta();x.total+=val;x.moves.unshift({id:Date.now(),type:'ganho',value:val,reason,status:'aprovado',at:new Date().toLocaleString()});save();closeXp();renderXp();}
+async function requestXpSpend(){const kind=document.getElementById('xpKind').value,target=document.getElementById('xpTarget').value,cost=+document.getElementById('xpCost').value,reason=document.getElementById('xpReason').value.trim();if(cost<=0||cost>xpAvailable()){alert('XP insuficiente.');return;}const x=ensureMeta();const status=APP.role==='mestre'||APP.role==='local'?'aprovado':'pendente';const move={id:Date.now(),type:'gasto',kind,target,value:cost,reason,status,at:new Date().toLocaleString()};x.moves.unshift(move);if(status==='aprovado'){x.spent+=cost;applyXpUpgrade(kind,target);}save();if(APP.client&&APP.fichaId&&status==='pendente'){const {data,error}=await APP.client.rpc('solicitar_gasto_xp',{p_ficha_id:APP.fichaId,p_valor:cost,p_motivo:reason});if(error)alert(error.message);else if(data)move.dbId=data.id;save();}closeXp();touchRender();}
+async function approveLocalXp(id,ok){const x=ensureMeta(),m=x.moves.find(v=>v.id===id);if(!m||m.status!=='pendente')return;if(APP.client&&m.dbId){const fn=ok?'aprovar_gasto_xp':'rejeitar_gasto_xp';const {error}=await APP.client.rpc(fn,{p_movimento_id:m.dbId});if(error){alert(error.message);return;}}m.status=ok?'aprovado':'rejeitado';if(ok){x.spent+=m.value;applyXpUpgrade(m.kind,m.target);}save();touchRender();}
+function renderXp(){const x=ensureMeta(),pend=x.moves.filter(m=>m.status==='pendente').reduce((a,m)=>a+m.value,0);const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};set('xpTotal',x.total||0);set('xpSpent',x.spent||0);set('xpPending',pend);set('xpAvailable',xpAvailable()+' disponivel');const log=document.getElementById('xpLog');if(!log)return;log.innerHTML='';if(!x.moves.length){log.innerHTML='<div style="color:var(--tx3);font-style:italic;text-align:center;padding:16px;">Nenhum XP registrado.</div>';return;}x.moves.forEach(m=>{const row=document.createElement('div');row.className='xp-item';row.innerHTML=`<div class="xp-main"><strong>${m.type==='ganho'?'XP recebido':'Gasto de XP'}</strong><small>${m.reason||''} - ${m.status||'aprovado'} - ${m.at||''}</small></div><div class="xp-val">${m.type==='ganho'?'+':'-'}${m.value}</div>`;if(m.status==='pendente'&&APP.role!=='jogador'){const a=document.createElement('div');a.className='xp-actions';a.innerHTML=`<button class="btn btn-add" onclick="approveLocalXp(${m.id},true)">Aprovar</button><button class="btn btn-del" onclick="approveLocalXp(${m.id},false)">Rejeitar</button>`;row.appendChild(a);}log.appendChild(row);});}
+const _oldSave=save;save=function(){ensureMeta();_oldSave();clearTimeout(window._onlineSaveTimer);window._onlineSaveTimer=setTimeout(saveOnlineNow,900);};
+const _oldMkDots=mkDots;mkDots=function(val,max,onChange,vt=false){return _oldMkDots(val,max,(v)=>safeChange(()=>onChange(v)),vt);};
+const _oldRenderFicha=renderFicha;renderFicha=function(){_oldRenderFicha();document.querySelectorAll('#pane-ficha input,#charName').forEach(el=>el.disabled=!canEdit());};
+const _oldRenderDiscs=renderDiscs;renderDiscs=function(){_oldRenderDiscs();document.querySelectorAll('#pane-disciplinas input,#pane-disciplinas button').forEach(el=>el.disabled=!canEdit());};
+const _oldNewDisc=newDisc;newDisc=function(){if(!canEdit())return alert('Ficha finalizada.');_oldNewDisc();};
+const _oldOpenNewPW=openNewPW;openNewPW=function(id){if(!canEdit())return alert('Ficha finalizada.');_oldOpenNewPW(id);};
+const _oldOpenEditPW=openEditPW;openEditPW=function(d,p){if(!canEdit())return alert('Ficha finalizada.');_oldOpenEditPW(d,p);};
+const _oldSavePW=savePW;savePW=function(){if(!canEdit())return alert('Ficha finalizada.');_oldSavePW();};
+// INIT
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+load();
+ensureMeta();
+D.merits=D.merits||[];
+D.flaws=D.flaws||[];
+initSupabase();
+renderFicha();
+renderDiscs();
+renderXp();
+setLockedUi();
+initNotas();
+
+CS.bloodCur=D.bloodMax;
+CS.wpTemp=D.willpower;
+
+document.getElementById('charName').addEventListener('input',function(){
+  D.info.name=this.value;save();document.title=(this.value||'Vampiro')+' â€” VtM';
+});
+if(D.info.name) document.title=D.info.name+' â€” VtM';
+
+// ════════════════════════════════
+// QUALIDADES E DEFEITOS
+// ════════════════════════════════
+function novaTrait(type){
+  const name=prompt(type==='merit'?'Nome da qualidade:':'Nome do defeito:');
+  if(!name)return;
+  const nivelStr=prompt('Nível (1-5):','1');
+  const nivel=Math.max(1,Math.min(5,parseInt(nivelStr)||1));
+  const desc=prompt('Descrição (opcional):','')||'';
+  const arr=type==='merit'?D.merits:D.flaws;
+  arr.push({id:Date.now(),nome:name,nivel,desc});
+  save();renderTraits();calcBonusPoints();
+}
+function removerTrait(type,id){
+  if(!confirm('Remover?'))return;
+  if(type==='merit')D.merits=D.merits.filter(x=>x.id!==id);
+  else D.flaws=D.flaws.filter(x=>x.id!==id);
+  save();renderTraits();calcBonusPoints();
+}
+function setTraitNivel(type,id,nivel){
+  const arr=type==='merit'?D.merits:D.flaws;
+  const t=arr.find(x=>x.id===id);
+  if(t){t.nivel=nivel;save();renderTraits();calcBonusPoints();}
+}
+function renderTraits(){
+  function renderList(arr,elId,type){
+    const el=document.getElementById(elId);if(!el)return;
+    const isFlaw=type==='flaw';
+    if(!arr||!arr.length){el.innerHTML='<div class="empty-traits">'+(isFlaw?'Nenhum defeito':'Nenhuma qualidade')+' cadastrado.</div>';return;}
+    el.innerHTML=arr.map(t=>`<div class="trait-item">
+      <div class="trait-dots">${Array.from({length:5},(_,i)=>`<div class="trait-dot${i<t.nivel?' on':''}${isFlaw?' flaw':''}" onclick="setTraitNivel('${type}',${t.id},${i+1})"></div>`).join('')}</div>
+      <div class="trait-body"><div class="trait-name">${t.nome} <span style="font-family:'Cinzel',serif;font-size:10px;color:${isFlaw?'var(--gd2)':'var(--blood2)'};">[${t.nivel}pt]</span></div>${t.desc?`<div class="trait-desc">${t.desc}</div>`:''}</div>
+      <button class="trait-del" onclick="removerTrait('${type}',${t.id})">&#10005;</button>
+    </div>`).join('');
+  }
+  renderList(D.merits||[],'meritsList','merit');
+  renderList(D.flaws||[],'flawsList','flaw');
+}
+function calcBonusPoints(){
+  const qualPts=(D.merits||[]).reduce((s,m)=>s+m.nivel,0);
+  const defPts=(D.flaws||[]).reduce((s,f)=>s+f.nivel,0);
+  const saldo=15+defPts-qualPts;
+  const el=document.getElementById('bonusPoints');if(!el)return;
+  el.innerHTML='Qualidades: <strong>'+qualPts+'pts</strong> &nbsp;|&nbsp; Defeitos: <strong>'+defPts+'pts</strong> (m&aacute;x 7 na cria&ccedil;&atilde;o) &nbsp;|&nbsp; Saldo b&ocirc;nus: <strong style="color:'+(saldo>=0?'var(--gr2)':'#f88')+'">'+( saldo>=0?'+':'')+saldo+'</strong>';
+}
+
+// ════════════════════════════════
+// ANOTAÇÕES
+// ════════════════════════════════
+let _notasSt;
+function initNotas(){
+  const saved=localStorage.getItem('vtm_notas');
+  const el=document.getElementById('notasText');
+  if(saved&&el)el.value=saved;
+  if(!el)return;
+  el.addEventListener('input',()=>{clearTimeout(_notasSt);_notasSt=setTimeout(()=>localStorage.setItem('vtm_notas',el.value),600);});
+}
+
+// ════════════════════════════════
+// EXPORT JSON
+// ════════════════════════════════
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function sortKeys(obj){
+  if(Array.isArray(obj))return obj.map(sortKeys);
+  if(obj!==null&&typeof obj==='object')return Object.keys(obj).sort().reduce((r,k)=>{r[k]=sortKeys(obj[k]);return r;},{});
+  return obj;
+}
+
+// Hash canônico — representa o ESTADO da ficha, não o arquivo
+// Campos voláteis (exportadoEm, hashAtual) ficam de fora
+function snapshotCanonico(D){
+  ensureMeta();
+  return {
+    info:       D.info,
+    attrs:      D.attrs,
+    skills:     D.skills,
+    skillNames: D.skillNames,
+    virtues:    D.virtues,
+    willpower:  D.willpower,
+    humanidade: D.humanidade,
+    bloodMax:   D.bloodMax,
+    disciplines:D.disciplines,
+    merits:     D.merits||[],
+    flaws:      D.flaws||[],
+    meta:       D.meta,
+    versao:     D.versao||0
+  };
+}
+async function hashCanonico(D){
+  return await sha256(JSON.stringify(sortKeys(snapshotCanonico(D))));
+}
+
+async function exportarJSON(){
+  ensureMeta();
+  const versao=(D.versao||0)+1;
+  D.versao=versao;
+  save();
+  const hash=await hashCanonico(D);
+  const exportData={...snapshotCanonico(D),hashCanonico:hash,exportadoEm:Date.now()};
+  const nome=(D.info&&D.info.name||'personagem').replace(/\s+/g,'_').toLowerCase();
+  const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='ficha_'+nome+'_v'+versao+'.json';a.click();
+  URL.revokeObjectURL(url);
+  const b=document.getElementById('saveBadge');
+  b.textContent='&#10003; exportado v'+versao;b.className='ok';
+  setTimeout(()=>{b.textContent='salvo &#9702;';b.className='';},2200);
+}
+
+// ════════════════════════════════
+// HASH VERIFICATION (COMBATE)
+// ════════════════════════════════
+async function computarHash(){
+  const hash=await hashCanonico(D);
+  const el=document.getElementById('hashAtualDisplay');
+  if(el){el.textContent=hash;el.style.color='var(--gd2)';}
+  localStorage.setItem('vtm_hash_atual',hash);
+  verificarIntegridade();
+  return hash;
+}
+function verificarIntegridade(){
+  const el=document.getElementById('hashVerResult');
+  const input=document.getElementById('hashAprovadoInput');
+  if(!el||!input)return;
+  const aprovado=(input.value||localStorage.getItem('vtm_hash_aprovado')||'').trim();
+  if(aprovado&&input.value)localStorage.setItem('vtm_hash_aprovado',aprovado);
+  const hashAtual=localStorage.getItem('vtm_hash_atual')||'';
+  if(!aprovado||!hashAtual){el.style.display='none';return;}
+  el.style.display='block';
+  if(aprovado===hashAtual){
+    el.style.cssText='display:block;background:rgba(45,106,63,.2);color:var(--gr2);border:1px solid var(--gr);border-radius:2px;padding:5px 8px;font-size:11px;';
+    el.textContent='&#10003; ÍNTEGRA — hash bate com o aprovado pelo mestre';
+  }else{
+    el.style.cssText='display:block;background:rgba(139,0,0,.2);color:#f88;border:1px solid var(--blood);border-radius:2px;padding:5px 8px;font-size:11px;';
+    el.textContent='&#10005; ADULTERADA — ficha modificada desde a última aprovação';
+  }
+}
+function initHashVerif(){
+  const saved=localStorage.getItem('vtm_hash_aprovado');
+  if(saved){const el=document.getElementById('hashAprovadoInput');if(el)el.value=saved;}
+  const hashSaved=localStorage.getItem('vtm_hash_atual');
+  if(hashSaved){const el=document.getElementById('hashAtualDisplay');if(el)el.textContent=hashSaved;}
+}
+</script>
+</body>
+</html>
+
+
+
+

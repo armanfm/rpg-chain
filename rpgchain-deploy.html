@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RPGChain — Deploy & Gestão Onchain</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blood:#8B0000;--blood2:#b22222;
+  --panel:#0e0b07;--surf:#161008;--card:#1e1510;--card2:#231e15;
+  --br:#3a2a1a;--br2:#5a3a20;--gd:#c9a84c;--gd2:#7a6030;
+  --tx:#e8d9c0;--tx2:#8a7a65;--tx3:#5a4a35;
+  --gr:#2d6a3f;--gr2:#6abf85;--ch:#4a4a90;--ch2:#9090e0;
+  --mono:'JetBrains Mono',monospace;
+}
+body{background:var(--panel);font-family:'Crimson Text',serif;color:var(--tx);min-height:100vh;}
+header{background:var(--surf);border-bottom:2px solid var(--blood);padding:10px 20px;display:flex;align-items:center;gap:14px;}
+.htitle{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--blood2);text-transform:uppercase;}
+.hname{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gd);letter-spacing:2px;}
+.hspacer{flex:1;}
+.wallet-badge{font-family:var(--mono);font-size:10px;padding:5px 12px;border:1px solid var(--br2);border-radius:2px;color:var(--tx2);}
+.wallet-badge.connected{border-color:var(--gr);color:var(--gr2);}
+main{padding:18px 20px;max-width:900px;}
+.card{background:var(--surf);border:1px solid var(--br);border-radius:2px;overflow:hidden;margin-bottom:14px;}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--card);border-bottom:1px solid var(--br);}
+.card-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gd2);}
+.card-body{padding:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.frow{margin-bottom:10px;}
+.frow label{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--tx3);margin-bottom:4px;}
+.frow input,.frow textarea,.frow select{width:100%;background:var(--card2);border:1px solid var(--br);border-radius:2px;padding:6px 10px;color:var(--tx);font-family:'Crimson Text',serif;font-size:14px;outline:none;}
+.frow input:focus,.frow textarea:focus,.frow select:focus{border-color:var(--gd2);}
+.frow input.mono{font-family:var(--mono);font-size:11px;}
+.frow textarea{resize:vertical;font-family:var(--mono);font-size:11px;}
+.btn{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;border-radius:2px;cursor:pointer;transition:all .15s;border:1px solid var(--br2);background:transparent;color:var(--tx2);}
+.btn:hover{border-color:var(--gd2);color:var(--gd);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn-prim{background:var(--blood);border-color:var(--blood);color:#fff;}
+.btn-prim:hover{background:var(--blood2);}
+.btn-approve{background:rgba(45,106,63,.2);border-color:var(--gr);color:var(--gr2);}
+.btn-approve:hover{background:rgba(45,106,63,.35);}
+.btn-chain{background:rgba(74,74,144,.15);border-color:var(--ch);color:var(--ch2);}
+.btn-chain:hover{background:rgba(74,74,144,.3);}
+.btn-metamask{background:rgba(240,100,0,.15);border-color:#f06400;color:#f0a060;}
+.btn-metamask:hover{background:rgba(240,100,0,.3);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.result{background:var(--card2);border:1px solid var(--br);border-radius:2px;padding:10px 14px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--tx2);display:none;word-break:break-all;line-height:1.6;}
+.result.show{display:block;}
+.result.ok{border-color:var(--gr);color:var(--gr2);}
+.result.err{border-color:var(--blood);color:#f88;}
+.result.info{border-color:var(--ch);color:var(--ch2);}
+.step{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.step-num{font-family:'Cinzel',serif;font-size:18px;color:var(--blood2);font-weight:700;flex-shrink:0;line-height:1;}
+.step-body{flex:1;}
+.step-title{font-family:'Cinzel',serif;font-size:13px;color:var(--gd);margin-bottom:4px;}
+.step-desc{font-size:13px;color:var(--tx2);line-height:1.6;}
+.code{background:var(--card);border:1px solid var(--br);border-radius:2px;padding:8px 12px;font-family:var(--mono);font-size:11px;color:#b8a870;margin-top:6px;overflow-x:auto;white-space:pre;}
+.tag-ok{display:inline-block;background:rgba(45,106,63,.2);border:1px solid var(--gr);color:var(--gr2);font-family:'Cinzel',serif;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:.08em;}
+.tag-pend{display:inline-block;background:rgba(201,168,76,.1);border:1px solid var(--gd2);color:var(--gd);font-family:'Cinzel',serif;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:.08em;}
+.divider{border:none;border-top:1px solid var(--br);margin:16px 0;}
+.flash{position:fixed;top:14px;right:18px;background:var(--card);border:1px solid var(--gd2);border-radius:2px;padding:7px 16px;font-family:'Cinzel',serif;font-size:10px;color:var(--gd);letter-spacing:.08em;opacity:0;transition:opacity .25s;z-index:9999;pointer-events:none;}
+.flash.show{opacity:1;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--surf);}::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px;}
+@media(max-width:700px){.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="htitle">RPGChain · Vampiro: A Máscara</div>
+    <div class="hname">Gestão Onchain (Sepolia)</div>
+  </div>
+  <div class="hspacer"></div>
+  <div class="wallet-badge" id="walletBadge">sem carteira</div>
+  <button class="btn btn-metamask" onclick="conectarMetaMask()" id="btnMM">🦊 Conectar MetaMask</button>
+</header>
+
+<main>
+
+<!-- GUIA RÁPIDO -->
+<div class="card">
+  <div class="card-hd"><span class="card-title">⬥ Guia de Deploy — Primeira Vez</span></div>
+  <div class="card-body">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Deploy do contrato no Remix IDE</div>
+        <div class="step-desc">Acesse <strong>remix.ethereum.org</strong>, crie um arquivo <code>RPGChain.sol</code> e cole o código do contrato. Compile com Solidity 0.8.20+. Na aba Deploy, selecione <em>Injected Provider (MetaMask)</em>, rede <strong>Sepolia</strong>, e clique em Deploy.</div>
+        <div class="code">// Após o deploy, copie o endereço do contrato e cole abaixo</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Cole o endereço do contrato aqui</div>
+        <div class="frow" style="margin-bottom:0;">
+          <label>Endereço do Contrato (Sepolia)</label>
+          <input type="text" id="contratoAddr" class="mono" placeholder="0x..." oninput="salvarContrato()"/>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Conecte o MetaMask e crie sua Crônica NFT</div>
+        <div class="step-desc">Clique em "Conectar MetaMask" no topo, depois use a seção abaixo para mintar o NFT da sua crônica. O NFT representa sua autoridade narrativa.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Approve fichas via painel do narrador</div>
+        <div class="step-desc">Com o ID da crônica e o hash da ficha (do painel do narrador), use a seção "Aprovar Ficha" para registrar na blockchain.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="g2">
+
+  <!-- CRIAR CRÔNICA -->
+  <div class="card">
+    <div class="card-hd"><span class="card-title">⬥ 1. Criar Crônica (Mintear NFT)</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+        Minta o NFT que representa sua autoridade narrativa. Cada crônica = 1 NFT. O ID retornado é o seu <strong>cronicaId</strong>.
+      </p>
+      <div class="frow"><label>Nome da Crônica</label><input type="text" id="cNome" placeholder="Praga Sombria"/></div>
+      <div class="frow"><label>Narrador</label><input type="text" id="cNarrador" placeholder="Seu nome"/></div>
+      <div class="btn-row">
+        <button class="btn btn-prim" onclick="criarCronica()">⬡ Mintear NFT da Crônica</button>
+      </div>
+      <div class="result" id="resCronica"></div>
+    </div>
+  </div>
+
+  <!-- APROVAR FICHA -->
+  <div class="card">
+    <div class="card-hd"><span class="card-title">⬥ 2. Aprovar Hash da Ficha</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+        Registra o hash aprovado (do painel do narrador) on-chain, vinculado ao NFT da sua crônica.
+      </p>
+      <div class="frow"><label>Crônica ID (seu NFT)</label><input type="number" id="aprovarCronicaId" min="1" placeholder="1"/></div>
+      <div class="frow"><label>Hash da Ficha (hex, sem 0x)</label><input type="text" id="aprovarHash" class="mono" placeholder="ab991f2e3d...64 chars"/></div>
+      <div class="frow"><label>Versão da Ficha</label><input type="number" id="aprovarVersao" min="1" value="1"/></div>
+      <div class="frow"><label>Saldo XP (negativo = dívida narrativa)</label><input type="number" id="aprovarXP" value="0"/></div>
+      <div class="btn-row">
+        <button class="btn btn-approve" onclick="aprovarFicha()">✓ Aprovar On-Chain</button>
+      </div>
+      <div class="result" id="resAprovar"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="g2">
+
+  <!-- VERIFICAR FICHA -->
+  <div class="card">
+    <div class="card-hd"><span class="card-title">⬥ 3. Verificar Hash (Público)</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+        Qualquer um pode verificar. Não precisa de carteira — usa RPC público da Sepolia.
+      </p>
+      <div class="frow"><label>Hash da Ficha (hex, sem 0x)</label><input type="text" id="verificarHash" class="mono" placeholder="ab991f2e3d..."/></div>
+      <div class="btn-row">
+        <button class="btn btn-chain" onclick="verificarFicha()">↗ Verificar na Blockchain</button>
+      </div>
+      <div class="result" id="resVerificar"></div>
+    </div>
+  </div>
+
+  <!-- VER CRÔNICA -->
+  <div class="card">
+    <div class="card-hd"><span class="card-title">⬥ 4. Dados da Crônica</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
+        Consulta dados e lista de fichas aprovadas de uma crônica.
+      </p>
+      <div class="frow"><label>Crônica ID</label><input type="number" id="consultarId" min="1" placeholder="1"/></div>
+      <div class="btn-row">
+        <button class="btn btn-chain" onclick="consultarCronica()">↗ Consultar Crônica</button>
+        <button class="btn" onclick="listarFichas()">↗ Listar Fichas</button>
+      </div>
+      <div class="result" id="resConsultar"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- REVOGAR -->
+<div class="card">
+  <div class="card-hd"><span class="card-title">⬥ 5. Revogar Ficha / Encerrar Crônica</span></div>
+  <div class="card-body">
+    <div class="g2">
+      <div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">Revoga a aprovação de uma ficha (jogador saiu, personagem morreu).</p>
+        <div class="frow"><label>Crônica ID</label><input type="number" id="revogarCronicaId" min="1" placeholder="1"/></div>
+        <div class="frow"><label>Hash a revogar</label><input type="text" id="revogarHash" class="mono" placeholder="ab991f..."/></div>
+        <div class="btn-row"><button class="btn btn-deny" style="border-color:var(--blood);color:#f88;" onclick="revogarFicha()">✕ Revogar Ficha</button></div>
+        <div class="result" id="resRevogar"></div>
+      </div>
+      <div>
+        <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">Encerra a crônica (não queima o NFT, apenas marca inativa — fichas existentes permanecem verificáveis).</p>
+        <div class="frow"><label>Crônica ID</label><input type="number" id="encerrarId" min="1" placeholder="1"/></div>
+        <div class="btn-row"><button class="btn" onclick="encerrarCronica()">⬡ Encerrar Crônica</button></div>
+        <div class="result" id="resEncerrar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="flash" id="flash"></div>
+
+<script>
+// ═══════════════════════════════════════
+// ABI inline (subset necessário)
+// ═══════════════════════════════════════
+const ABI = [
+  {"type":"function","name":"criarCronica","stateMutability":"nonpayable","inputs":[{"name":"nome","type":"string"},{"name":"narrador","type":"string"}],"outputs":[{"name":"cronicaId","type":"uint256"}]},
+  {"type":"function","name":"aprovarFicha","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"},{"name":"fichaHash","type":"bytes32"},{"name":"versao","type":"uint256"},{"name":"xpSaldo","type":"int256"}],"outputs":[]},
+  {"type":"function","name":"revogarFicha","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"},{"name":"fichaHash","type":"bytes32"}],"outputs":[]},
+  {"type":"function","name":"encerrarCronica","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[]},
+  {"type":"function","name":"verificarFicha","stateMutability":"view","inputs":[{"name":"fichaHash","type":"bytes32"}],"outputs":[{"name":"aprovada","type":"bool"},{"name":"cronicaId","type":"uint256"},{"name":"versao","type":"uint256"},{"name":"xpSaldo","type":"int256"},{"name":"aprovadaEm","type":"uint256"},{"name":"nomeCronica","type":"string"},{"name":"mestre","type":"address"}]},
+  {"type":"function","name":"dadosDaCronica","stateMutability":"view","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[{"name":"nome","type":"string"},{"name":"narrador","type":"string"},{"name":"mestre","type":"address"},{"name":"criadaEm","type":"uint256"},{"name":"ativa","type":"bool"},{"name":"totalFichas","type":"uint256"}]},
+  {"type":"function","name":"hashsDaCronica","stateMutability":"view","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[{"name":"","type":"bytes32[]"}]},
+  {"type":"event","name":"CronicaCriada","inputs":[{"name":"cronicaId","type":"uint256","indexed":true},{"name":"nome","type":"string","indexed":false},{"name":"mestre","type":"address","indexed":true}]},
+  {"type":"event","name":"FichaAprovada","inputs":[{"name":"cronicaId","type":"uint256","indexed":true},{"name":"fichaHash","type":"bytes32","indexed":true},{"name":"versao","type":"uint256","indexed":false},{"name":"xpSaldo","type":"int256","indexed":false}]}
+];
+
+// Sepolia public RPC (para leitura sem carteira)
+const SEPOLIA_RPC = 'https://rpc.ankr.com/eth_sepolia';
+const SEPOLIA_CHAIN_ID = 11155111n;
+
+let provider = null;
+let signer   = null;
+let contrato = null;
+
+// ─── Persiste endereço ─────────────────────────────────────────────────────
+function salvarContrato(){
+  const addr = document.getElementById('contratoAddr').value.trim();
+  localStorage.setItem('rpgchain_contrato', addr);
+}
+function carregarContrato(){
+  const saved = localStorage.getItem('rpgchain_contrato');
+  if(saved) document.getElementById('contratoAddr').value = saved;
+}
+
+function getContratoAddr(){
+  return document.getElementById('contratoAddr').value.trim();
+}
+
+// ─── Utils ─────────────────────────────────────────────────────────────────
+function flash(msg, dur=2500){
+  const el=document.getElementById('flash');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), dur);
+}
+
+function showRes(id, msg, type='info'){
+  const el=document.getElementById(id);
+  el.textContent=msg; el.className='result show '+type;
+}
+
+function fmtDate(ts){
+  return new Date(Number(ts)*1000).toLocaleString('pt-BR');
+}
+
+function hashToBytes32(hexStr){
+  const clean = hexStr.replace(/^0x/,'').padStart(64,'0').slice(0,64);
+  return '0x'+clean;
+}
+
+// Hash canônico — mesma lógica da ficha do jogador
+// Campos fixos: info, attrs, skills, skillNames, virtues,
+//   willpower, humanidade, bloodMax, disciplines, merits, flaws, meta, versao
+// Exclui: exportadoEm, hashCanonico — hash estável independente de export
+function snapshotCanonico(obj){
+  const campos=['attrs','bloodMax','disciplines','flaws','humanidade',
+                'info','merits','meta','skillNames','skills','versao',
+                'virtues','willpower'];
+  return campos.reduce((r,k)=>{r[k]=obj[k];return r;},{});
+}
+function sortKeys(obj){
+  if(Array.isArray(obj))return obj.map(sortKeys);
+  if(obj!==null&&typeof obj==='object')
+    return Object.keys(obj).sort().reduce((r,k)=>{r[k]=sortKeys(obj[k]);return r;},{});
+  return obj;
+}
+async function sha256str(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// Recalcula o hash canônico de um JSON importado (para verificação cruzada)
+async function hashCanonicoDeJSON(jsonObj){
+  return await sha256str(JSON.stringify(sortKeys(snapshotCanonico(jsonObj))));
+}
+
+// ─── MetaMask ──────────────────────────────────────────────────────────────
+async function conectarMetaMask(){
+  if(!window.ethereum){ flash('MetaMask não encontrado — instale a extensão'); return; }
+  try{
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+
+    const network = await provider.getNetwork();
+    if(network.chainId !== SEPOLIA_CHAIN_ID){
+      try{
+        await window.ethereum.request({
+          method:'wallet_switchEthereumChain',
+          params:[{chainId:'0xaa36a7'}]
+        });
+        provider = new ethers.BrowserProvider(window.ethereum);
+      }catch(e){
+        flash('Mude para a rede Sepolia no MetaMask'); return;
+      }
+    }
+
+    signer = await provider.getSigner();
+    const addr = await signer.getAddress();
+    const badge = document.getElementById('walletBadge');
+    badge.textContent = addr.slice(0,6)+'...'+addr.slice(-4)+' (Sepolia)';
+    badge.className = 'wallet-badge connected';
+    document.getElementById('btnMM').textContent = '✓ Conectado';
+    flash('MetaMask conectado');
+  }catch(e){
+    flash('Erro: '+e.message);
+  }
+}
+
+function getContrato(useSigner=true){
+  const addr = getContratoAddr();
+  if(!addr){ flash('Cole o endereço do contrato primeiro'); return null; }
+  const p = useSigner ? (signer||null) : new ethers.JsonRpcProvider(SEPOLIA_RPC);
+  if(useSigner && !signer){ flash('Conecte o MetaMask primeiro'); return null; }
+  return new ethers.Contract(addr, ABI, useSigner ? signer : p);
+}
+
+// ─── Criar Crônica ─────────────────────────────────────────────────────────
+async function criarCronica(){
+  const c = getContrato();
+  if(!c) return;
+  const nome     = document.getElementById('cNome').value.trim();
+  const narrador = document.getElementById('cNarrador').value.trim();
+  if(!nome){ flash('Preencha o nome da crônica'); return; }
+  try{
+    showRes('resCronica','Enviando transação...','info');
+    const tx = await c.criarCronica(nome, narrador);
+    showRes('resCronica','Aguardando confirmação...\nTX: '+tx.hash,'info');
+    const receipt = await tx.wait();
+    // Extrair cronicaId do evento
+    const iface  = new ethers.Interface(ABI);
+    let cronicaId = '?';
+    for(const log of receipt.logs){
+      try{
+        const parsed = iface.parseLog(log);
+        if(parsed && parsed.name === 'CronicaCriada'){
+          cronicaId = parsed.args.cronicaId.toString();
+        }
+      }catch(e){}
+    }
+    showRes('resCronica',
+      '✓ NFT da crônica criado!\n\n'+
+      'Crônica ID: '+cronicaId+'\n'+
+      'Nome: '+nome+'\n'+
+      'TX: '+tx.hash+'\n\n'+
+      '→ Salve o Crônica ID: '+cronicaId+' — você vai precisar para aprovar fichas.',
+      'ok'
+    );
+    localStorage.setItem('rpgchain_cronica_id', cronicaId);
+    flash('NFT criado! Crônica ID: '+cronicaId);
+  }catch(e){
+    showRes('resCronica','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Aprovar Ficha ─────────────────────────────────────────────────────────
+async function aprovarFicha(){
+  const c = getContrato();
+  if(!c) return;
+  const cronicaId = document.getElementById('aprovarCronicaId').value;
+  const hashHex   = document.getElementById('aprovarHash').value.trim();
+  const versao    = document.getElementById('aprovarVersao').value;
+  const xpSaldo   = document.getElementById('aprovarXP').value;
+  if(!cronicaId||!hashHex){ flash('Preencha todos os campos'); return; }
+  if(hashHex.replace(/^0x/,'').length !== 64){ flash('Hash deve ter 64 caracteres hex'); return; }
+  try{
+    const bytes32Hash = hashToBytes32(hashHex);
+    showRes('resAprovar','Enviando aprovação...','info');
+    const tx = await c.aprovarFicha(
+      BigInt(cronicaId),
+      bytes32Hash,
+      BigInt(versao),
+      BigInt(xpSaldo)
+    );
+    showRes('resAprovar','Aguardando confirmação...\nTX: '+tx.hash,'info');
+    await tx.wait();
+    showRes('resAprovar',
+      '✓ Ficha aprovada on-chain!\n\n'+
+      'Crônica: '+cronicaId+'\n'+
+      'Hash: '+hashHex.slice(0,20)+'...\n'+
+      'Versão: '+versao+'\n'+
+      'XP Saldo: '+xpSaldo+'\n'+
+      'TX: '+tx.hash,
+      'ok'
+    );
+    flash('Ficha aprovada on-chain');
+  }catch(e){
+    showRes('resAprovar','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Verificar Ficha (sem carteira) ────────────────────────────────────────
+async function verificarFicha(){
+  const addr = getContratoAddr();
+  if(!addr){ flash('Cole o endereço do contrato'); return; }
+  const hashHex = document.getElementById('verificarHash').value.trim();
+  if(!hashHex){ flash('Cole o hash da ficha'); return; }
+  try{
+    showRes('resVerificar','Consultando blockchain...','info');
+    const rpcProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+    const c = new ethers.Contract(addr, ABI, rpcProvider);
+    const bytes32 = hashToBytes32(hashHex);
+    const [aprovada,cronicaId,versao,xpSaldo,aprovadaEm,nomeCronica,mestre] = await c.verificarFicha(bytes32);
+    if(!aprovada){
+      showRes('resVerificar','✕ Hash NÃO encontrado na blockchain.\n\nEssa ficha não foi aprovada por nenhuma crônica registrada neste contrato.\nOu o hash foi revogado pelo mestre.','err');
+    } else {
+      const xp = Number(xpSaldo);
+      showRes('resVerificar',
+        '✓ FICHA APROVADA\n\n'+
+        'Crônica: "'+nomeCronica+'" (ID: '+cronicaId.toString()+')\n'+
+        'Mestre: '+mestre+'\n'+
+        'Versão: '+versao.toString()+'\n'+
+        'XP Saldo: '+(xp>=0?'+':'')+xp+(xp<0?' (Dívida Narrativa)':'')+'\n'+
+        'Aprovada em: '+fmtDate(aprovadaEm),
+        'ok'
+      );
+    }
+  }catch(e){
+    showRes('resVerificar','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Consultar Crônica ─────────────────────────────────────────────────────
+async function consultarCronica(){
+  const addr = getContratoAddr();
+  if(!addr){ flash('Cole o endereço do contrato'); return; }
+  const id = document.getElementById('consultarId').value;
+  if(!id){ flash('Informe o ID da crônica'); return; }
+  try{
+    showRes('resConsultar','Consultando...','info');
+    const rpcProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+    const c = new ethers.Contract(addr, ABI, rpcProvider);
+    const [nome,narrador,mestre,criadaEm,ativa,totalFichas] = await c.dadosDaCronica(BigInt(id));
+    showRes('resConsultar',
+      'Crônica #'+id+'\n'+
+      'Nome: "'+nome+'"\n'+
+      'Narrador: '+narrador+'\n'+
+      'Mestre: '+mestre+'\n'+
+      'Criada em: '+fmtDate(criadaEm)+'\n'+
+      'Status: '+(ativa?'ATIVA':'ENCERRADA')+'\n'+
+      'Fichas aprovadas: '+totalFichas.toString(),
+      ativa?'ok':'info'
+    );
+  }catch(e){
+    showRes('resConsultar','Erro: '+e.message,'err');
+  }
+}
+
+async function listarFichas(){
+  const addr = getContratoAddr();
+  if(!addr){ flash('Cole o endereço do contrato'); return; }
+  const id = document.getElementById('consultarId').value;
+  try{
+    const rpcProvider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+    const c = new ethers.Contract(addr, ABI, rpcProvider);
+    const hashes = await c.hashsDaCronica(BigInt(id));
+    if(!hashes.length){
+      showRes('resConsultar','Nenhuma ficha aprovada nesta crônica ainda.','info');
+      return;
+    }
+    const txt = 'Fichas aprovadas na Crônica #'+id+':\n\n'+
+      hashes.map((h,i)=>(i+1)+'. '+h).join('\n');
+    showRes('resConsultar',txt,'info');
+  }catch(e){
+    showRes('resConsultar','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Revogar Ficha ─────────────────────────────────────────────────────────
+async function revogarFicha(){
+  const c = getContrato();
+  if(!c) return;
+  const id      = document.getElementById('revogarCronicaId').value;
+  const hashHex = document.getElementById('revogarHash').value.trim();
+  if(!id||!hashHex){ flash('Preencha os campos'); return; }
+  if(!confirm('Revogar esta ficha? A ação é registrada na blockchain.')) return;
+  try{
+    showRes('resRevogar','Enviando revogação...','info');
+    const tx = await c.revogarFicha(BigInt(id), hashToBytes32(hashHex));
+    await tx.wait();
+    showRes('resRevogar','✓ Ficha revogada.\nTX: '+tx.hash,'ok');
+    flash('Ficha revogada on-chain');
+  }catch(e){
+    showRes('resRevogar','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Encerrar Crônica ──────────────────────────────────────────────────────
+async function encerrarCronica(){
+  const c = getContrato();
+  if(!c) return;
+  const id = document.getElementById('encerrarId').value;
+  if(!id){ flash('Informe o ID'); return; }
+  if(!confirm('Encerrar a crônica #'+id+'? Fichas já aprovadas continuam verificáveis.')) return;
+  try{
+    showRes('resEncerrar','Encerrando...','info');
+    const tx = await c.encerrarCronica(BigInt(id));
+    await tx.wait();
+    showRes('resEncerrar','✓ Crônica encerrada.\nTX: '+tx.hash,'ok');
+    flash('Crônica encerrada');
+  }catch(e){
+    showRes('resEncerrar','Erro: '+e.message,'err');
+  }
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+carregarContrato();
+const savedId = localStorage.getItem('rpgchain_cronica_id');
+if(savedId){
+  document.getElementById('aprovarCronicaId').value = savedId;
+  document.getElementById('consultarId').value = savedId;
+  document.getElementById('revogarCronicaId').value = savedId;
+  document.getElementById('encerrarId').value = savedId;
+}
+if(window.ethereum){
+  window.ethereum.on('accountsChanged', ()=>location.reload());
+  window.ethereum.on('chainChanged', ()=>location.reload());
+}
+</script>
+</body>
+</html>
