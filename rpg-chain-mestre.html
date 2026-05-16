@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>RPG Chain — Painel do Narrador</title>
 <script src="https://cdn.jsdelivr.net/npm/pouchdb@9.0.0/dist/pouchdb.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -113,13 +112,6 @@ main{flex:1;overflow-y:auto;padding:18px 20px;}
 ::-webkit-scrollbar-track{background:var(--surf);}
 ::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px;}
 @media(max-width:700px){.g2,.g3{grid-template-columns:1fr}.ficha-info{grid-template-columns:1fr 1fr}}
-
-.oc-result{background:var(--card2);border:.5px solid var(--border);border-radius:4px;padding:10px 12px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--tx2);display:none;word-break:break-all;line-height:1.6;white-space:pre-wrap;}
-.oc-result.show{display:block;}
-.oc-result.ok{border-color:var(--gr);color:var(--gr2);}
-.oc-result.err{border-color:var(--blood);color:#f88;}
-.oc-result.info{border-color:var(--ch);color:var(--ch2);}
-input.mono{font-family:var(--mono)!important;font-size:11px!important;}
 </style>
 </head>
 <body>
@@ -130,15 +122,12 @@ input.mono{font-family:var(--mono)!important;font-size:11px!important;}
     <div class="hname">Painel do Narrador</div>
   </div>
   <div class="hspacer"></div>
-  <div id="walletBadge" style="font-family:var(--mono);font-size:10px;padding:5px 12px;border:1px solid var(--br2);border-radius:2px;color:var(--tx2);display:none;"></div>
-  <button class="hbtn" id="btnMM" onclick="conectarMetaMask()">🦊 MetaMask</button>
   <button class="hbtn" onclick="openConfig()">⚙ Configurar</button>
 </header>
 
 <nav>
   <button class="tab on" onclick="goTab('validar',this)">Validar Ficha</button>
   <button class="tab" onclick="goTab('cronicas',this)">Crônicas</button>
-  <button class="tab" onclick="goTab('onchain',this)">⬡ Onchain</button>
 </nav>
 
 <main>
@@ -276,109 +265,6 @@ input.mono{font-family:var(--mono)!important;font-size:11px!important;}
     </div>
   </div>
 </div>
-<!-- ═══ ONCHAIN ═══ -->
-<div class="pane" id="pane-onchain">
-
-  <div class="card" style="margin-bottom:14px;">
-    <div class="card-hd"><span class="card-title">⬥ Contrato Sepolia</span></div>
-    <div class="card-body">
-      <div class="frow">
-        <label>Endereço do Contrato</label>
-        <input type="text" id="ocContrato" class="mono" placeholder="0x..." oninput="salvarOcContrato()" style="font-family:var(--mono);font-size:12px;"/>
-      </div>
-      <div style="font-size:12px;color:var(--tx3);margin-top:4px;">
-        Cole o endereço após fazer o deploy do <code>RPGChain.sol</code> no Remix IDE (Sepolia).
-      </div>
-    </div>
-  </div>
-
-  <div class="g2" style="align-items:start;">
-    <div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">⬥ 1. Criar Crônica (Mintear NFT)</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
-            Minta o NFT da sua autoridade narrativa. Cada crônica = 1 NFT. O ID retornado é o seu <strong>cronicaId</strong>.
-          </p>
-          <div class="frow"><label>Nome da Crônica</label><input type="text" id="ocNome" placeholder="Praga Sombria..."/></div>
-          <div class="frow"><label>Narrador</label><input type="text" id="ocNarrador" placeholder="Seu nome"/></div>
-          <div class="btn-row">
-            <button class="btn btn-prim" onclick="ocCriarCronica()">⬡ Mintear NFT da Crônica</button>
-          </div>
-          <div class="oc-result" id="ocResCronica"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">⬥ 2. Aprovar Hash On-Chain</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
-            Registra o hash aprovado na Sepolia, vinculado ao NFT da crônica. O hash vem do painel de validação.
-          </p>
-          <div class="frow"><label>Crônica ID (seu NFT)</label><input type="number" id="ocCronicaId" min="1" placeholder="1"/></div>
-          <div class="frow"><label>Hash da Ficha (64 chars hex, sem 0x)</label><input type="text" id="ocHash" style="font-family:var(--mono);font-size:11px;" placeholder="ab991f2e3d..."/></div>
-          <div style="display:flex;gap:10px;">
-            <div class="frow" style="flex:1;"><label>Versão</label><input type="number" id="ocVersao" min="1" value="1"/></div>
-            <div class="frow" style="flex:1;"><label>XP Saldo</label><input type="number" id="ocXPSaldo" value="0"/></div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-approve" onclick="ocAprovarFicha()">✓ Aprovar On-Chain</button>
-            <button class="btn" onclick="ocPreencherDoValidador()" title="Preenche com o hash da ficha carregada no validador">← Usar hash do validador</button>
-          </div>
-          <div class="oc-result" id="ocResAprovar"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">⬥ 5. Revogar Ficha</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">Jogador saiu, personagem morreu. Remove a aprovação on-chain.</p>
-          <div class="frow"><label>Crônica ID</label><input type="number" id="ocRevCronicaId" min="1" placeholder="1"/></div>
-          <div class="frow"><label>Hash a revogar</label><input type="text" id="ocRevHash" style="font-family:var(--mono);font-size:11px;" placeholder="ab991f..."/></div>
-          <div class="btn-row">
-            <button class="btn btn-deny" onclick="ocRevogarFicha()">✕ Revogar Ficha</button>
-            <button class="btn" onclick="ocEncerrarCronica()">⬡ Encerrar Crônica</button>
-          </div>
-          <div class="frow" style="margin-top:10px;"><label>Crônica ID para encerrar</label><input type="number" id="ocEncerrarId" min="1" placeholder="1"/></div>
-          <div class="oc-result" id="ocResRevogar"></div>
-        </div>
-      </div>
-
-    </div>
-    <div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">⬥ 3. Verificar Hash (Público)</span></div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--tx2);line-height:1.55;margin-bottom:12px;">
-            Qualquer um pode verificar. Não precisa de MetaMask — usa RPC público da Sepolia.
-          </p>
-          <div class="frow"><label>Hash da Ficha (hex, sem 0x)</label><input type="text" id="ocVerHash" style="font-family:var(--mono);font-size:11px;" placeholder="ab991f2e3d..."/></div>
-          <div class="btn-row">
-            <button class="btn btn-chain" onclick="ocVerificarFicha()">↗ Verificar na Blockchain</button>
-            <button class="btn" onclick="ocPreencherVerificar()">← Usar hash atual</button>
-          </div>
-          <div class="oc-result" id="ocResVerificar"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-hd"><span class="card-title">⬥ 4. Dados da Crônica</span></div>
-        <div class="card-body">
-          <div class="frow"><label>Crônica ID</label><input type="number" id="ocConsultarId" min="1" placeholder="1"/></div>
-          <div class="btn-row">
-            <button class="btn btn-chain" onclick="ocConsultarCronica()">↗ Consultar</button>
-            <button class="btn" onclick="ocListarFichas()">↗ Listar Fichas</button>
-          </div>
-          <div class="oc-result" id="ocResConsultar"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
 </main>
 
 <div class="flash" id="flash"></div>
@@ -454,289 +340,9 @@ input.mono{font-family:var(--mono)!important;font-size:11px!important;}
 
 <script>
 const db=new PouchDB('rpgchain_narrador_v1');
-let CFG={geminiKey:'',geminiModel:'gemini-2.0-flash',wallet:'',contrato:'',contratoAddr:'',cronicaId:''};
-let ocProvider=null,ocSigner=null;
-const SEPOLIA_RPC='https://rpc.ankr.com/eth_sepolia';
-const SEPOLIA_CHAIN_ID=11155111n;
+let CFG={geminiKey:'',wallet:'',contrato:''};
 let CRONICA=null, PLAYERS=[], LOG=[];
 let fichaAtual=null, hashAtual=null;
-
-
-// ════════════════════════════════
-// ABI inline
-// ════════════════════════════════
-const OC_ABI=[
-  {"type":"function","name":"criarCronica","stateMutability":"nonpayable","inputs":[{"name":"nome","type":"string"},{"name":"narrador","type":"string"}],"outputs":[{"name":"cronicaId","type":"uint256"}]},
-  {"type":"function","name":"aprovarFicha","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"},{"name":"fichaHash","type":"bytes32"},{"name":"versao","type":"uint256"},{"name":"xpSaldo","type":"int256"}],"outputs":[]},
-  {"type":"function","name":"revogarFicha","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"},{"name":"fichaHash","type":"bytes32"}],"outputs":[]},
-  {"type":"function","name":"encerrarCronica","stateMutability":"nonpayable","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[]},
-  {"type":"function","name":"verificarFicha","stateMutability":"view","inputs":[{"name":"fichaHash","type":"bytes32"}],"outputs":[{"name":"aprovada","type":"bool"},{"name":"cronicaId","type":"uint256"},{"name":"versao","type":"uint256"},{"name":"xpSaldo","type":"int256"},{"name":"aprovadaEm","type":"uint256"},{"name":"nomeCronica","type":"string"},{"name":"mestre","type":"address"}]},
-  {"type":"function","name":"dadosDaCronica","stateMutability":"view","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[{"name":"nome","type":"string"},{"name":"narrador","type":"string"},{"name":"mestre","type":"address"},{"name":"criadaEm","type":"uint256"},{"name":"ativa","type":"bool"},{"name":"totalFichas","type":"uint256"}]},
-  {"type":"function","name":"hashsDaCronica","stateMutability":"view","inputs":[{"name":"cronicaId","type":"uint256"}],"outputs":[{"name":"","type":"bytes32[]"}]},
-  {"type":"event","name":"CronicaCriada","inputs":[{"name":"cronicaId","type":"uint256","indexed":true},{"name":"nome","type":"string","indexed":false},{"name":"mestre","type":"address","indexed":true}]},
-  {"type":"event","name":"FichaAprovada","inputs":[{"name":"cronicaId","type":"uint256","indexed":true},{"name":"fichaHash","type":"bytes32","indexed":true},{"name":"versao","type":"uint256","indexed":false},{"name":"xpSaldo","type":"int256","indexed":false}]}
-];
-
-function ocShowRes(id,msg,type='info'){
-  const el=document.getElementById(id);
-  el.textContent=msg;el.className='oc-result show '+type;
-}
-function ocHashToBytes32(hex){
-  const c=hex.replace(/^0x/,'').padStart(64,'0').slice(0,64);
-  return '0x'+c;
-}
-function ocFmtDate(ts){return new Date(Number(ts)*1000).toLocaleString('pt-BR');}
-
-function salvarOcContrato(){
-  const v=document.getElementById('ocContrato').value.trim();
-  CFG.contratoAddr=v;
-  localStorage.setItem('rpgchain_contrato',v);
-}
-
-function initOnchain(){
-  const saved=localStorage.getItem('rpgchain_contrato');
-  if(saved){
-    document.getElementById('ocContrato').value=saved;
-    CFG.contratoAddr=saved;
-  }
-  const savedId=localStorage.getItem('rpgchain_cronica_id');
-  if(savedId){
-    ['ocCronicaId','ocRevCronicaId','ocConsultarId','ocEncerrarId'].forEach(id=>{
-      document.getElementById(id).value=savedId;
-    });
-  }
-  // update wallet badge
-  const badge=document.getElementById('walletBadge');
-  if(ocSigner){badge.style.display='block';}
-}
-
-async function conectarMetaMask(){
-  if(!window.ethers){flash('ethers.js não carregou');return;}
-  if(!window.ethereum){flash('MetaMask não encontrada — instale a extensão');return;}
-  try{
-    await window.ethereum.request({method:'eth_requestAccounts'});
-    ocProvider=new ethers.BrowserProvider(window.ethereum);
-    const network=await ocProvider.getNetwork();
-    if(network.chainId!==SEPOLIA_CHAIN_ID){
-      try{
-        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0xaa36a7'}]});
-        ocProvider=new ethers.BrowserProvider(window.ethereum);
-      }catch(e){flash('Mude para a rede Sepolia no MetaMask');return;}
-    }
-    ocSigner=await ocProvider.getSigner();
-    const addr=await ocSigner.getAddress();
-    const badge=document.getElementById('walletBadge');
-    badge.textContent=addr.slice(0,6)+'...'+addr.slice(-4)+' · Sepolia';
-    badge.style.display='block';
-    badge.style.borderColor='var(--gr)';
-    badge.style.color='var(--gr2)';
-    document.getElementById('btnMM').textContent='✓ Conectado';
-    flash('MetaMask conectado — '+addr.slice(0,6)+'...'+addr.slice(-4));
-    window.ethereum.on('accountsChanged',()=>location.reload());
-    window.ethereum.on('chainChanged',()=>location.reload());
-  }catch(e){flash('Erro MetaMask: '+e.message);}
-}
-
-function getOcContrato(){
-  const addr=CFG.contratoAddr||localStorage.getItem('rpgchain_contrato')||'';
-  if(!addr){flash('Cole o endereço do contrato na aba Onchain');return null;}
-  if(!ocSigner){flash('Conecte o MetaMask primeiro');return null;}
-  return new ethers.Contract(addr,OC_ABI,ocSigner);
-}
-function getOcContratoRPC(){
-  const addr=CFG.contratoAddr||localStorage.getItem('rpgchain_contrato')||'';
-  if(!addr){flash('Cole o endereço do contrato na aba Onchain');return null;}
-  const rpc=new ethers.JsonRpcProvider(SEPOLIA_RPC);
-  return new ethers.Contract(addr,OC_ABI,rpc);
-}
-
-async function ocCriarCronica(){
-  const c=getOcContrato();if(!c)return;
-  const nome=document.getElementById('ocNome').value.trim();
-  const narrador=document.getElementById('ocNarrador').value.trim();
-  if(!nome){flash('Preencha o nome da crônica');return;}
-  try{
-    ocShowRes('ocResCronica','Aguardando MetaMask...','info');
-    const tx=await c.criarCronica(nome,narrador);
-    ocShowRes('ocResCronica','Confirmando na Sepolia...
-TX: '+tx.hash,'info');
-    const receipt=await tx.wait();
-    const iface=new ethers.Interface(OC_ABI);
-    let cronicaId='?';
-    for(const log of receipt.logs){
-      try{const p=iface.parseLog(log);if(p&&p.name==='CronicaCriada')cronicaId=p.args.cronicaId.toString();}catch(e){}
-    }
-    localStorage.setItem('rpgchain_cronica_id',cronicaId);
-    ['ocCronicaId','ocRevCronicaId','ocConsultarId','ocEncerrarId'].forEach(id=>{
-      document.getElementById(id).value=cronicaId;
-    });
-    ocShowRes('ocResCronica','✓ NFT criado!
-
-Crônica ID: '+cronicaId+'
-Nome: '+nome+'
-TX: '+tx.hash+'
-
-→ Salve o ID '+cronicaId+' — use para aprovar fichas.','ok');
-    flash('NFT criado! Crônica ID: '+cronicaId);
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResCronica','Erro: '+msg,'err');
-  }
-}
-
-async function ocAprovarFicha(){
-  const c=getOcContrato();if(!c)return;
-  const cronicaId=document.getElementById('ocCronicaId').value;
-  const hashHex=document.getElementById('ocHash').value.trim();
-  const versao=document.getElementById('ocVersao').value;
-  const xpSaldo=document.getElementById('ocXPSaldo').value;
-  if(!cronicaId||!hashHex){flash('Preencha todos os campos');return;}
-  if(hashHex.replace(/^0x/,'').length!==64){flash('Hash deve ter 64 caracteres hex');return;}
-  try{
-    ocShowRes('ocResAprovar','Aguardando MetaMask...','info');
-    const tx=await c.aprovarFicha(BigInt(cronicaId),ocHashToBytes32(hashHex),BigInt(versao),BigInt(xpSaldo));
-    ocShowRes('ocResAprovar','Confirmando...
-TX: '+tx.hash,'info');
-    await tx.wait();
-    ocShowRes('ocResAprovar','✓ Ficha aprovada on-chain!
-
-Crônica: '+cronicaId+'
-Hash: '+hashHex.slice(0,20)+'...
-Versão: '+versao+'
-XP Saldo: '+xpSaldo+'
-TX: '+tx.hash,'ok');
-    flash('Ficha aprovada on-chain!');
-    addLog('Onchain: ficha aprovada hash '+hashHex.slice(0,12)+'...');
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResAprovar','Erro: '+msg,'err');
-  }
-}
-
-function ocPreencherDoValidador(){
-  // pega o hash atual do validador (hashAtual global)
-  if(!hashAtual){flash('Carregue uma ficha no validador primeiro');return;}
-  document.getElementById('ocHash').value=hashAtual;
-  if(fichaAtual){
-    const xpT=parseInt(document.getElementById('xpTotal').value)||0;
-    const xpG=parseInt(document.getElementById('xpGasto').value)||0;
-    document.getElementById('ocXPSaldo').value=xpT-xpG;
-    document.getElementById('ocVersao').value=fichaAtual.versao||1;
-  }
-  flash('Hash preenchido do validador');
-}
-
-function ocPreencherVerificar(){
-  if(!hashAtual){flash('Carregue uma ficha no validador primeiro');return;}
-  document.getElementById('ocVerHash').value=hashAtual;
-}
-
-async function ocVerificarFicha(){
-  const c=getOcContratoRPC();if(!c)return;
-  const hashHex=document.getElementById('ocVerHash').value.trim();
-  if(!hashHex){flash('Cole o hash');return;}
-  try{
-    ocShowRes('ocResVerificar','Consultando Sepolia...','info');
-    const [aprovada,cronicaId,versao,xpSaldo,aprovadaEm,nomeCronica,mestre]=await c.verificarFicha(ocHashToBytes32(hashHex));
-    if(!aprovada){
-      ocShowRes('ocResVerificar','✕ Hash NÃO encontrado na blockchain.
-
-Ficha não aprovada ou hash revogado.','err');
-    }else{
-      const xp=Number(xpSaldo);
-      ocShowRes('ocResVerificar',
-        '✓ FICHA APROVADA
-
-Crônica: "'+nomeCronica+'" (ID: '+cronicaId.toString()+')
-Mestre: '+mestre+'
-Versão: '+versao.toString()+'
-XP Saldo: '+(xp>=0?'+':'')+xp+(xp<0?' (Dívida Narrativa)':'')+'
-Aprovada em: '+ocFmtDate(aprovadaEm),
-        'ok'
-      );
-    }
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResVerificar','Erro: '+msg,'err');
-  }
-}
-
-async function ocConsultarCronica(){
-  const c=getOcContratoRPC();if(!c)return;
-  const id=document.getElementById('ocConsultarId').value;
-  if(!id){flash('Informe o ID');return;}
-  try{
-    ocShowRes('ocResConsultar','Consultando...','info');
-    const [nome,narrador,mestre,criadaEm,ativa,totalFichas]=await c.dadosDaCronica(BigInt(id));
-    ocShowRes('ocResConsultar',
-      'Crônica #'+id+'
-Nome: "'+nome+'"
-Narrador: '+narrador+'
-Mestre: '+mestre+'
-Criada em: '+ocFmtDate(criadaEm)+'
-Status: '+(ativa?'ATIVA':'ENCERRADA')+'
-Fichas aprovadas: '+totalFichas.toString(),
-      ativa?'ok':'info'
-    );
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResConsultar','Erro: '+msg,'err');
-  }
-}
-
-async function ocListarFichas(){
-  const c=getOcContratoRPC();if(!c)return;
-  const id=document.getElementById('ocConsultarId').value;
-  if(!id){flash('Informe o ID');return;}
-  try{
-    ocShowRes('ocResConsultar','Buscando fichas...','info');
-    const hashes=await c.hashsDaCronica(BigInt(id));
-    if(!hashes.length){ocShowRes('ocResConsultar','Nenhuma ficha aprovada ainda.','info');return;}
-    ocShowRes('ocResConsultar','Fichas na Crônica #'+id+':
-
-'+hashes.map((h,i)=>(i+1)+'. '+h).join('\n'),'info');
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResConsultar','Erro: '+msg,'err');
-  }
-}
-
-async function ocRevogarFicha(){
-  const c=getOcContrato();if(!c)return;
-  const id=document.getElementById('ocRevCronicaId').value;
-  const h=document.getElementById('ocRevHash').value.trim();
-  if(!id||!h){flash('Preencha os campos');return;}
-  if(!confirm('Revogar esta ficha?'))return;
-  try{
-    ocShowRes('ocResRevogar','Aguardando MetaMask...','info');
-    const tx=await c.revogarFicha(BigInt(id),ocHashToBytes32(h));
-    await tx.wait();
-    ocShowRes('ocResRevogar','✓ Ficha revogada.
-TX: '+tx.hash,'ok');
-    flash('Ficha revogada');
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResRevogar','Erro: '+msg,'err');
-  }
-}
-
-async function ocEncerrarCronica(){
-  const c=getOcContrato();if(!c)return;
-  const id=document.getElementById('ocEncerrarId').value;
-  if(!id){flash('Informe o ID da crônica');return;}
-  if(!confirm('Encerrar a crônica #'+id+'?'))return;
-  try{
-    ocShowRes('ocResRevogar','Aguardando MetaMask...','info');
-    const tx=await c.encerrarCronica(BigInt(id));
-    await tx.wait();
-    ocShowRes('ocResRevogar','✓ Crônica encerrada.
-TX: '+tx.hash,'ok');
-    flash('Crônica encerrada');
-  }catch(e){
-    const msg=e.reason||e.shortMessage||e.message||String(e);
-    ocShowRes('ocResRevogar','Erro: '+msg,'err');
-  }
-}
 
 async function dbGet(id){try{return await db.get(id);}catch(e){return null;}}
 async function dbSet(id,data){const doc=await dbGet(id);await db.put(doc?{...doc,...data}:{_id:id,...data});}
@@ -758,7 +364,6 @@ function goTab(id,btn){
   document.getElementById('pane-'+id).classList.add('on');
   btn.classList.add('on');
   if(id==='cronicas')populateSelects();
-  if(id==='onchain')initOnchain();
 }
 function fmtTime(ts){return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 function calcSaldo(){
@@ -1123,20 +728,13 @@ async function autorizarOnchain(){
   const id=parseInt(document.getElementById('onchainSel').value);
   const p=PLAYERS.find(x=>x.id===id);
   if(!p){flash('Selecione um jogador');return;}
-  if(!p.hashAprovado){flash('Sem hash aprovado — valide e aprove a ficha primeiro');return;}
-  // preenche os campos da aba Onchain e navega pra lá
-  document.getElementById('ocHash').value=p.hashAprovado;
-  const saldo=p.xpTotal-p.xpGasto;
-  document.getElementById('ocXPSaldo').value=saldo;
-  const savedId=localStorage.getItem('rpgchain_cronica_id')||'';
-  if(savedId) document.getElementById('ocCronicaId').value=savedId;
-  // navega para aba onchain
-  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.getElementById('pane-onchain').classList.add('on');
-  document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.includes('Onchain'))t.classList.add('on');});
-  initOnchain();
-  flash('Hash carregado — clique Aprovar On-Chain');
+  if(!p.hashAprovado){flash('Sem hash aprovado para este jogador');return;}
+  if(!CFG.wallet){flash('Configure sua wallet em ⚙ Configurar');return;}
+  // simulação — integre ethers.js para envio real
+  const tx='0x'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  document.getElementById('txResult').textContent='TX simulada: '+tx+'\n→ Para envio real: integre ethers.js + window.ethereum com a ABI do contrato Sepolia.';
+  addLog('Onchain: '+p.personagem+' hash '+p.hashAprovado.slice(0,12)+'...');
+  flash('Autorização onchain registrada (simulada)');
 }
 
 function renderPlayers(){
@@ -1182,4 +780,3 @@ initDB();
 </script>
 </body>
 </html>
-
